@@ -24,8 +24,12 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Lad Google API-kald passere igennem uden cache
-  if (e.request.url.includes('script.google.com')) return;
+  // Allow Google Apps Script API calls to pass through without cache
+  try {
+    const u = new URL(e.request.url);
+    if (u.hostname === 'script.google.com' || u.hostname.endsWith('.googleusercontent.com')) return;
+  } catch (_) {}
+
 
   e.respondWith(
     caches.match(e.request).then(cached => {

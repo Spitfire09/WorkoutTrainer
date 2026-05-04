@@ -6,7 +6,8 @@
 // 1. Opret et nyt Google Sheet (eller brug et eksisterende)
 // 2. Gå til Udvidelser → Apps Script
 // 3. Indsæt HELE denne fil
-// 4. Skift SECRET_TOKEN til dit eget hemmelige kodeord
+// 4. Gem hemmelig nøgle: Projektindstillinger → Script Properties
+//    → Tilføj egenskab: SECRET_TOKEN = <dit eget hemmelige kodeord>
 // 5. Klik Deploy → Ny implementering → Web-app
 //    Kør som:  Mig selv
 //    Adgang:   Alle (kun du kender URL'en)
@@ -22,7 +23,15 @@
 //   Se seed-data.json for de korrekte dataformater.
 // ══════════════════════════════════════════════════════════════════
 
-const SECRET_TOKEN = 'WorkoutTracker6500!'; // ← SKIFT DETTE!
+// Secret is read from Script Properties (recommended) with a fallback default.
+// Set it via: Apps Script editor → Project Settings → Script Properties → add key "SECRET_TOKEN"
+const SECRET_TOKEN = (function() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN') || 'WorkoutTracker6500!';
+  } catch(_) {
+    return 'WorkoutTracker6500!'; // Fallback (used only in local testing without Properties access)
+  }
+})();
 
 // ── Sheet-navne ──────────────────────────────────────────────────
 const SHEET_EXERCISES = 'Exercises';
@@ -116,11 +125,9 @@ function doGet(e) {
     }
 
     // Auth-tjek
-    if (SECRET_TOKEN !== '' && secret !== SECRET_TOKEN) {
+    if (!secret || secret !== SECRET_TOKEN) {
       return _err('Ugyldig nøgle');
     }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     // ── list exercises ───────────────────────────────────────────
     if (action === 'listExercises') {
@@ -193,7 +200,8 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
 
     // Auth-tjek
-    if (SECRET_TOKEN !== '' && data.secret !== SECRET_TOKEN) {
+    // Auth-tjek
+    if (!data.secret || data.secret !== SECRET_TOKEN) {
       return _err('Ugyldig nøgle');
     }
 
