@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#3860b2" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="WorkoutTracker — træningsdagbog" />
+  <title>WorkoutTracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0b1218;
+      --surface:   #111c27;
+      --surface2:  #1a2a38;
+      --accent:    #3860b2;
+      --accent2:   #4ec9f7;
+      --text:      #e8eef5;
+      --muted:     #8098b4;
+      --danger:    #e05c5c;
+      --success:   #4caf7d;
+      --border:    #243347;
+      --radius:    10px;
+      --hdr:       56px;
+    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', 'Open Sans', sans-serif; font-size: 15px; }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Top bar ──────────────────────────────────────────────── */
+    #topbar {
+      height: var(--hdr);
+      background: var(--accent);
+      display: flex; align-items: center;
+      padding: 0 14px; gap: 10px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    #topbar h1 { font-size: 20px; font-weight: 700; flex: 1; }
+    #topbar button {
+      background: transparent; border: none; color: #fff;
+      font-size: 22px; cursor: pointer; padding: 6px; line-height: 1;
+    }
+
+    /* ── Bottom nav ───────────────────────────────────────────── */
+    #bottomnav {
+      height: 56px; background: var(--surface2);
+      display: flex; flex-shrink: 0; border-top: 1px solid var(--border);
+    }
+    #bottomnav button {
+      flex: 1; background: transparent; border: none; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 10px; gap: 3px; cursor: pointer; transition: color .15s;
+    }
+    #bottomnav button.active { color: var(--accent2); }
+    #bottomnav button svg { width: 22px; height: 22px; }
+
+    /* ── Screen container ─────────────────────────────────────── */
+    #screens { flex: 1; overflow: hidden; position: relative; }
+    .screen {
+      position: absolute; inset: 0; overflow-y: auto;
+      padding: 12px; display: none; flex-direction: column; gap: 10px;
+    }
+    .screen.active { display: flex; }
+
+    /* ── Filter bar (home) ────────────────────────────────────── */
+    .filter-bar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .filter-bar select, .filter-bar input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 8px 12px; border-radius: var(--radius);
+      font-size: 14px; flex: 1; min-width: 120px;
+    }
+    .filter-bar select:focus, .filter-bar input:focus { outline: 2px solid var(--accent2); }
+
+    /* ── Exercise card ────────────────────────────────────────── */
+    .ex-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+      transition: background .12s;
+    }
+    .ex-card:hover { background: var(--surface2); }
+    .ex-card.done { opacity: .55; }
+    .ex-card-info { flex: 1; min-width: 0; }
+    .ex-card-info h3 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ex-card-info p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .ex-card-arrow { color: var(--muted); font-size: 20px; flex-shrink: 0; }
+    .badge-done {
+      background: var(--success); color: #fff;
+      border-radius: 6px; font-size: 11px; padding: 2px 6px; flex-shrink: 0;
+    }
+
+    /* ── Log card ─────────────────────────────────────────────── */
+    .log-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .log-card-info { flex: 1; min-width: 0; }
+    .log-card-info h3 { font-size: 15px; }
+    .log-card-info p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .btn-icon-danger {
+      background: transparent; border: none; color: var(--danger);
+      cursor: pointer; font-size: 18px; padding: 4px; flex-shrink: 0;
+    }
+
+    /* ── Detail / form screen ─────────────────────────────────── */
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: var(--muted); }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 12px; border-radius: var(--radius);
+      font-size: 15px; width: 100%;
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: 2px solid var(--accent2);
+    }
+
+    /* ── Buttons ──────────────────────────────────────────────── */
+    .btn {
+      padding: 12px 20px; border-radius: var(--radius); border: none;
+      font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+    }
+    .btn:active { opacity: .75; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger  { background: var(--danger);  color: #fff; }
+    .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-full    { width: 100%; }
+
+    /* ── Separator ────────────────────────────────────────────── */
+    .sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* ── Settings form ────────────────────────────────────────── */
+    .settings-note { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Empty state ──────────────────────────────────────────── */
+    .empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
+
+    /* ── Toast ────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      background: #222d3a; color: #fff; padding: 10px 20px;
+      border-radius: 24px; font-size: 14px; pointer-events: none;
+      opacity: 0; transition: opacity .25s; z-index: 999; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Spinner ──────────────────────────────────────────────── */
+    #spinner {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 998; display: none;
+    }
+    .spin {
+      width: 40px; height: 40px; border: 4px solid var(--border);
+      border-top-color: var(--accent2); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Section heading ──────────────────────────────────────── */
+    .section-hdr {
+      font-size: 12px; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted); padding: 4px 0 2px;
+    }
+
+    /* ── Reps/weight inline inputs ────────────────────────────── */
+    .inline-inputs { display: flex; gap: 8px; }
+    .inline-inputs .form-group { flex: 1; }
+
+    /* ── Day selector chips ───────────────────────────────────── */
+    .day-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .day-chip {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); cursor: pointer;
+      font-size: 13px; transition: background .12s, color .12s;
+    }
+    .day-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── Progress bar ─────────────────────────────────────────── */
+    .progress-wrap { background: var(--surface2); border-radius: 6px; height: 6px; overflow: hidden; }
+    .progress-fill { background: var(--accent2); height: 100%; transition: width .3s; }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <h1 id="topbar-title">WorkoutTracker</h1>
+  <button id="btn-refresh" title="Opdater" aria-label="Opdater">⟳</button>
+  <button id="btn-newday" title="Ny dag" aria-label="Ny dag" style="font-size:14px;font-weight:700;">NY DAG</button>
+</div>
+
+<!-- Screens -->
+<div id="screens">
+
+  <!-- ─── SCREEN: Home ──────────────────────────────────────── -->
+  <div class="screen active" id="screen-home">
+    <div class="filter-bar">
+      <select id="sel-type" aria-label="Filtrer type">
+        <option value="">Alle typer</option>
+        <option>Push</option>
+        <option>Pull</option>
+        <option>Leg</option>
+        <option>Core</option>
+      </select>
+      <select id="sel-day" aria-label="Filtrer dag">
+        <option value="">Alle dage</option>
+      </select>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <p id="progress-label" class="section-hdr" style="text-align:right"></p>
+    <div id="exercise-list"></div>
+    <button class="btn btn-primary btn-full" id="btn-add-exercise" style="margin-top:4px">+ Ny øvelse</button>
+  </div>
+
+  <!-- ─── SCREEN: Details ───────────────────────────────────── -->
+  <div class="screen" id="screen-details">
+    <div class="form-group">
+      <label>Øvelse</label>
+      <input type="text" id="det-exercise" />
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="det-type">
+          <option>Push</option><option>Pull</option><option>Leg</option><option>Core</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="det-category">
+          <option>Compound</option><option>Isolation</option>
+        </select>
+      </div>
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Dag</label>
+        <input type="text" id="det-day" placeholder="1, 2, 3, H…" />
+      </div>
+      <div class="form-group">
+        <label>Sæt</label>
+        <input type="number" id="det-set" min="1" max="10" />
+      </div>
+      <div class="form-group">
+        <label>RPE</label>
+        <input type="number" id="det-rpe" min="1" max="10" step="0.5" />
+      </div>
+    </div>
+    <div class="sep"></div>
+    <p class="section-hdr">Dagens træning</p>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Forrige vægt (kg)</label>
+        <input type="number" id="det-lastweight" step="0.5" readonly style="opacity:.6" />
+      </div>
+      <div class="form-group">
+        <label>Dagens vægt (kg)</label>
+        <input type="number" id="det-todayweight" step="0.5" />
+      </div>
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Forrige reps</label>
+        <input type="number" id="det-lastreps" readonly style="opacity:.6" />
+      </div>
+      <div class="form-group">
+        <label>Dagens reps</label>
+        <input type="number" id="det-todayreps" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Beskrivelse</label>
+      <textarea id="det-description"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-ghost" id="btn-det-back" style="flex:1">← Tilbage</button>
+      <button class="btn btn-success" id="btn-det-save" style="flex:1">✓ Gem &amp; Afslut</button>
+    </div>
+    <button class="btn btn-danger btn-full" id="btn-det-delete" style="margin-top:4px">Slet øvelse</button>
+  </div>
+
+  <!-- ─── SCREEN: New Exercise ──────────────────────────────── -->
+  <div class="screen" id="screen-new">
+    <p class="section-hdr" style="font-size:18px;color:var(--text);text-transform:none;letter-spacing:0;font-weight:700">Opret ny øvelse</p>
+    <div class="form-group">
+      <label>Øvelse</label>
+      <input type="text" id="new-exercise" placeholder="Navn på øvelsen" />
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="new-type">
+          <option>Push</option><option>Pull</option><option>Leg</option><option>Core</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="new-category">
+          <option>Compound</option><option>Isolation</option>
+        </select>
+      </div>
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Dag</label>
+        <input type="text" id="new-day" placeholder="1, 2, 3, H…" />
+      </div>
+      <div class="form-group">
+        <label>Sæt</label>
+        <input type="number" id="new-set" value="3" min="1" max="10" />
+      </div>
+      <div class="form-group">
+        <label>RPE</label>
+        <input type="number" id="new-rpe" min="1" max="10" step="0.5" placeholder="8" />
+      </div>
+    </div>
+    <div class="inline-inputs">
+      <div class="form-group">
+        <label>Start vægt (kg)</label>
+        <input type="number" id="new-weight" value="0" step="0.5" />
+      </div>
+      <div class="form-group">
+        <label>Start reps</label>
+        <input type="number" id="new-reps" value="10" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Beskrivelse</label>
+      <textarea id="new-description" placeholder="Teknisk fokus, noter…"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-ghost" id="btn-new-back" style="flex:1">← Tilbage</button>
+      <button class="btn btn-primary" id="btn-new-save" style="flex:1">💾 Gem øvelse</button>
+    </div>
+  </div>
+
+  <!-- ─── SCREEN: Log ───────────────────────────────────────── -->
+  <div class="screen" id="screen-log">
+    <input type="search" id="log-search" placeholder="Søg i log…"
+      style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius);font-size:14px;width:100%" />
+    <div id="log-list"></div>
+  </div>
+
+  <!-- ─── SCREEN: Settings ──────────────────────────────────── -->
+  <div class="screen" id="screen-settings">
+    <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700">Indstillinger</p>
+    <div class="form-group">
+      <label>Google Apps Script URL</label>
+      <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec" />
+    </div>
+    <div class="form-group">
+      <label>Hemmelig nøgle</label>
+      <input type="password" id="cfg-secret" placeholder="WorkoutTracker6500!" />
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-save-settings">💾 Gem indstillinger</button>
+    <div class="sep"></div>
+    <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700;margin-top:8px">Data</p>
+    <button class="btn btn-ghost btn-full" id="btn-sync">⟳ Synkronisér med Google Sheet</button>
+    <button class="btn btn-ghost btn-full" id="btn-export-json" style="margin-top:6px">⬇ Eksportér lokal data (JSON)</button>
+    <div class="sep"></div>
+    <p class="settings-note">
+      Import af eksisterende data fra xlsx: POST til Apps Script URL med<br>
+      <code style="font-size:11px">{ "action": "importExercises", "secret": "…", "rows": […] }</code><br>
+      Se <code>GoogleSheet/seed-data.json</code> for de 56 øvelser og 421 log-poster.
+    </p>
+    <div class="sep"></div>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v2</p>
+  </div>
+
+</div><!-- /screens -->
+
+<!-- Bottom nav -->
+<nav id="bottomnav" role="navigation" aria-label="Navigation">
+  <button class="active" data-screen="screen-home" aria-label="Øvelser">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 12h2m14 0h2M6.5 7.5l1.5 1.5M16 7.5l-1.5 1.5M12 5V3M8 12a4 4 0 018 0"/>
+    </svg>
+    Øvelser
+  </button>
+  <button data-screen="screen-log" aria-label="Log">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Log
+  </button>
+  <button data-screen="screen-settings" aria-label="Indstillinger">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
+    Indstillinger
+  </button>
+</nav>
+
+<div id="toast"></div>
+<div id="spinner"><div class="spin"></div></div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════════
+const DB_KEY_EXERCISES = 'wt_exercises';
+const DB_KEY_LOG       = 'wt_log';
+const DB_KEY_CFG       = 'wt_config';
+
+let exercises  = [];   // Array of exercise objects
+let logEntries = [];   // Array of log entry objects
+let cfg        = { url: '', secret: '' };
+let currentEx  = null; // Exercise being edited/viewed
+
+// ── Persist ─────────────────────────────────────────────────────
+function save() {
+  localStorage.setItem(DB_KEY_EXERCISES, JSON.stringify(exercises));
+  localStorage.setItem(DB_KEY_LOG,       JSON.stringify(logEntries));
+}
+
+function load() {
+  try { exercises  = JSON.parse(localStorage.getItem(DB_KEY_EXERCISES) || '[]'); } catch(e){}
+  try { logEntries = JSON.parse(localStorage.getItem(DB_KEY_LOG)       || '[]'); } catch(e){}
+  try { cfg        = JSON.parse(localStorage.getItem(DB_KEY_CFG)       || '{}'); } catch(e){}
+  cfg.url    = cfg.url    || '';
+  cfg.secret = cfg.secret || '';
+}
+
+function saveCfg() {
+  localStorage.setItem(DB_KEY_CFG, JSON.stringify(cfg));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════════════════════════
+function toast(msg, ms = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+function spinner(on) { document.getElementById('spinner').style.display = on ? 'flex' : 'none'; }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#bottomnav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === id);
+  });
+  const titles = {
+    'screen-home': 'WorkoutTracker',
+    'screen-details': 'Øvelse',
+    'screen-new': 'Ny øvelse',
+    'screen-log': 'Log',
+    'screen-settings': 'Indstillinger'
+  };
+  document.getElementById('topbar-title').textContent = titles[id] || 'WorkoutTracker';
+  // Show/hide top-bar controls depending on screen
+  document.getElementById('btn-newday').style.display  = id === 'screen-home' ? '' : 'none';
+  document.getElementById('btn-refresh').style.display = id === 'screen-settings' ? 'none' : '';
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RENDER: HOME
+// ══════════════════════════════════════════════════════════════════
+function buildDayOptions() {
+  const days = [...new Set(exercises.map(e => String(e.day)))].sort((a, b) => {
+    const na = parseInt(a), nb = parseInt(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    if (!isNaN(na)) return -1;
+    if (!isNaN(nb)) return  1;
+    return a.localeCompare(b);
+  });
+  const sel = document.getElementById('sel-day');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Alle dage</option>';
+  days.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = 'Dag ' + d;
+    sel.appendChild(o);
+  });
+  if (days.includes(cur)) sel.value = cur;
+}
+
+function renderHome() {
+  buildDayOptions();
+  const typeFilter = document.getElementById('sel-type').value;
+  const dayFilter  = document.getElementById('sel-day').value;
+
+  let filtered = exercises;
+  if (typeFilter) filtered = filtered.filter(e => e.type === typeFilter);
+  if (dayFilter)  filtered = filtered.filter(e => String(e.day) === dayFilter);
+
+  const done  = filtered.filter(e => e.completed === 'yes').length;
+  const total = filtered.length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent =
+    total ? `${done} / ${total} øvelser afsluttet (${pct}%)` : '';
+
+  const list = document.getElementById('exercise-list');
+  list.innerHTML = '';
+
+  if (!filtered.length) {
+    list.innerHTML = '<p class="empty">Ingen øvelser matcher filtret.</p>'; return;
+  }
+
+  // Sort: not-done first, then alphabetically
+  const sorted = [...filtered].sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed === 'yes' ? 1 : -1;
+    return a.exercise.localeCompare(b.exercise);
+  });
+
+  sorted.forEach(ex => {
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
+    card.innerHTML = `
+      <div class="ex-card-info">
+        <h3>${esc(ex.exercise)}</h3>
+        <p>Sidst: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${esc(ex.type)} dag ${esc(String(ex.day))}</p>
+      </div>
+      ${ex.completed === 'yes' ? '<span class="badge-done">✓</span>' : ''}
+      <span class="ex-card-arrow">›</span>`;
+    card.addEventListener('click', () => openDetails(ex));
+    list.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DETAILS SCREEN
+// ══════════════════════════════════════════════════════════════════
+function openDetails(ex) {
+  currentEx = ex;
+  document.getElementById('det-exercise').value    = ex.exercise         || '';
+  document.getElementById('det-type').value        = ex.type             || 'Push';
+  document.getElementById('det-category').value    = ex.category         || 'Compound';
+  document.getElementById('det-day').value         = String(ex.day       || '');
+  document.getElementById('det-set').value         = ex.set              ?? 3;
+  document.getElementById('det-rpe').value         = ex.rpe              ?? '';
+  document.getElementById('det-lastweight').value  = ex.lastWeight       ?? 0;
+  document.getElementById('det-todayweight').value = ex.todayWeight      ?? ex.lastWeight ?? 0;
+  document.getElementById('det-lastreps').value    = ex.lastReps         ?? 0;
+  document.getElementById('det-todayreps').value   = ex.todayReps        ?? ex.lastReps ?? 0;
+  document.getElementById('det-description').value = ex.description      || '';
+  showScreen('screen-details');
+}
+
+async function saveDetails() {
+  if (!currentEx) return;
+  const ex = currentEx;
+
+  ex.exercise    = document.getElementById('det-exercise').value.trim();
+  ex.type        = document.getElementById('det-type').value;
+  ex.category    = document.getElementById('det-category').value;
+  ex.day         = document.getElementById('det-day').value.trim();
+  ex.set         = Number(document.getElementById('det-set').value)         || 3;
+  ex.rpe         = Number(document.getElementById('det-rpe').value)         || null;
+  ex.todayWeight = Number(document.getElementById('det-todayweight').value) || 0;
+  ex.todayReps   = Number(document.getElementById('det-todayreps').value)   || 0;
+  ex.description = document.getElementById('det-description').value.trim();
+  ex.completed   = 'yes';
+  ex.lastCompletedDate = new Date().toISOString().slice(0, 10);
+
+  // Build log entry
+  const logEntry = {
+    entryId:     uid(),
+    date:        new Date().toLocaleString('da-DK'),
+    type:        ex.type,
+    exercise:    ex.exercise,
+    day:         String(ex.day),
+    lastWeight:  ex.lastWeight,
+    todayWeight: ex.todayWeight,
+    lastReps:    ex.lastReps,
+    todayReps:   ex.todayReps,
+    dateOnly:    new Date().toISOString().slice(0, 10),
+    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'}),
+    set:         ex.set,
+    synced:      false
+  };
+  logEntries.unshift(logEntry);
+  save();
+
+  // Sync
+  if (cfg.url) {
+    spinner(true);
+    try {
+      await api({ action: 'markCompleted', entryId: ex.entryId,
+        todayWeight: ex.todayWeight, todayReps: ex.todayReps,
+        fields: { TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
+                  Completed: 'yes', LastCompletedDate: ex.lastCompletedDate,
+                  Exercise: ex.exercise, Type: ex.type, Category: ex.category,
+                  Day: ex.day, Set: ex.set, RPE: ex.rpe || '', Description: ex.description },
+        logEntry });
+      ex.synced = true; logEntry.synced = true; save();
+    } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
+    spinner(false);
+  }
+
+  toast('✅ ' + ex.exercise + ' afsluttet!');
+  showScreen('screen-home');
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  NEW EXERCISE
+// ══════════════════════════════════════════════════════════════════
+async function saveNewExercise() {
+  const name = document.getElementById('new-exercise').value.trim();
+  if (!name) { toast('⚠️ Angiv et navn'); return; }
+
+  const ex = {
+    entryId:           uid(),
+    id:                null,
+    date:              new Date().toISOString().slice(0, 10),
+    type:              document.getElementById('new-type').value,
+    category:          document.getElementById('new-category').value,
+    day:               document.getElementById('new-day').value.trim() || '1',
+    exercise:          name,
+    lastWeight:        Number(document.getElementById('new-weight').value) || 0,
+    todayWeight:       Number(document.getElementById('new-weight').value) || 0,
+    lastReps:          Number(document.getElementById('new-reps').value)   || 10,
+    todayReps:         Number(document.getElementById('new-reps').value)   || 10,
+    set:               Number(document.getElementById('new-set').value)    || 3,
+    rpe:               Number(document.getElementById('new-rpe').value)    || null,
+    completed:         'no',
+    lastCompletedDate: new Date().toISOString().slice(0, 10),
+    description:       document.getElementById('new-description').value.trim(),
+    synced:            false
+  };
+  exercises.push(ex);
+  save();
+
+  if (cfg.url) {
+    spinner(true);
+    try {
+      await api({ action: 'newExercise', exercise: ex });
+      ex.synced = true; save();
+    } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
+    spinner(false);
+  }
+
+  // Clear form
+  ['new-exercise','new-day','new-rpe','new-description'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('new-weight').value = '0';
+  document.getElementById('new-reps').value   = '10';
+  document.getElementById('new-set').value    = '3';
+
+  toast('✅ Øvelse oprettet!');
+  showScreen('screen-home');
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  LOG SCREEN
+// ══════════════════════════════════════════════════════════════════
+function renderLog() {
+  const q    = document.getElementById('log-search').value.toLowerCase();
+  const list = document.getElementById('log-list');
+  list.innerHTML = '';
+
+  let filtered = logEntries;
+  if (q) filtered = filtered.filter(e =>
+    (e.exercise||'').toLowerCase().includes(q) ||
+    (e.type||'').toLowerCase().includes(q) ||
+    (e.dateOnly||'').includes(q));
+
+  if (!filtered.length) {
+    list.innerHTML = '<p class="empty">Ingen log-poster fundet.</p>'; return;
+  }
+
+  filtered.forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'log-card';
+    card.innerHTML = `
+      <div class="log-card-info">
+        <h3>${esc(entry.exercise)}</h3>
+        <p>${entry.todayWeight} kg, ${entry.todayReps} reps (forrige: ${entry.lastWeight} kg, ${entry.lastReps} reps)</p>
+        <p>${esc(entry.dateOnly || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
+      </div>
+      <button class="btn-icon-danger" data-id="${entry.entryId}" title="Slet" aria-label="Slet log-post">🗑</button>`;
+    card.querySelector('.btn-icon-danger').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteLog(entry.entryId);
+    });
+    list.appendChild(card);
+  });
+}
+
+async function deleteLog(entryId) {
+  if (!confirm('Slet denne log-post?')) return;
+  logEntries = logEntries.filter(e => e.entryId !== entryId);
+  save();
+  if (cfg.url) {
+    try { await api({ action: 'deleteLog', entryId }); } catch(e) {}
+  }
+  renderLog();
+  toast('Log-post slettet');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  NEW DAY
+// ══════════════════════════════════════════════════════════════════
+async function newDay() {
+  if (!confirm('Ny dag — nulstil alle afsluttede øvelser?\nLastWeight ← TodayWeight, Completed ← no')) return;
+  let reset = 0;
+  exercises.forEach(ex => {
+    if (ex.completed === 'yes') {
+      ex.lastWeight = ex.todayWeight;
+      ex.lastReps   = ex.todayReps;
+      ex.completed  = 'no';
+      ex.synced     = false;
+      reset++;
+    }
+  });
+  save();
+
+  if (cfg.url) {
+    spinner(true);
+    try {
+      await api({ action: 'newDay' });
+      exercises.forEach(e => e.synced = true);
+      save();
+    } catch(e) { toast('⚠️ Offline – ændringer gemt lokalt'); }
+    spinner(false);
+  }
+
+  toast(`✅ ${reset} øvelser nulstillet til ny dag`);
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  DELETE EXERCISE
+// ══════════════════════════════════════════════════════════════════
+async function deleteExercise() {
+  if (!currentEx) return;
+  if (!confirm('Slet øvelsen "' + currentEx.exercise + '"?')) return;
+  const id = currentEx.entryId;
+  exercises = exercises.filter(e => e.entryId !== id);
+  save();
+  if (cfg.url) {
+    try { await api({ action: 'deleteExercise', entryId: id }); } catch(e) {}
+  }
+  toast('Øvelse slettet');
+  currentEx = null;
+  showScreen('screen-home');
+  renderHome();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SYNC WITH GOOGLE SHEET
+// ══════════════════════════════════════════════════════════════════
+async function syncAll() {
+  if (!cfg.url) { toast('⚠️ Angiv Apps Script URL under Indstillinger'); return; }
+  spinner(true);
+  try {
+    const [exRes, logRes] = await Promise.all([
+      apiFetch(cfg.url + '?action=listExercises&secret=' + encodeURIComponent(cfg.secret)),
+      apiFetch(cfg.url + '?action=listLog&secret='       + encodeURIComponent(cfg.secret))
+    ]);
+    if (exRes.status === 'ok')  { exercises  = exRes.exercises  || []; }
+    if (logRes.status === 'ok') { logEntries = logRes.entries   || []; }
+    save();
+    renderHome(); renderLog();
+    toast('✅ Synkroniseret!');
+  } catch(e) {
+    toast('⚠️ Synk fejlede: ' + e.message);
+  }
+  spinner(false);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  API
+// ══════════════════════════════════════════════════════════════════
+async function apiFetch(url, opts) {
+  const resp = await fetch(url, opts);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
+}
+
+async function api(body) {
+  return apiFetch(cfg.url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' }, // avoid CORS preflight
+    body:    JSON.stringify({ secret: cfg.secret, ...body })
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════════════════════════
+function loadSettings() {
+  document.getElementById('cfg-url').value    = cfg.url    || '';
+  document.getElementById('cfg-secret').value = cfg.secret || '';
+}
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify({ exercises, log: logEntries }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'workouttracker-export.json';
+  a.click();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  UTILITY
+// ══════════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  EVENT WIRING
+// ══════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+
+  load();
+  loadSettings();
+  renderHome();
+
+  // Bottom nav
+  document.querySelectorAll('#bottomnav button[data-screen]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      showScreen(btn.dataset.screen);
+      if (btn.dataset.screen === 'screen-log') renderLog();
+    });
+  });
+
+  // Topbar
+  document.getElementById('btn-refresh').addEventListener('click', syncAll);
+  document.getElementById('btn-newday').addEventListener('click', newDay);
+
+  // Home filters
+  document.getElementById('sel-type').addEventListener('change', renderHome);
+  document.getElementById('sel-day').addEventListener('change',  renderHome);
+
+  // Add exercise
+  document.getElementById('btn-add-exercise').addEventListener('click', () => showScreen('screen-new'));
+
+  // Details
+  document.getElementById('btn-det-back').addEventListener('click',   () => { showScreen('screen-home'); renderHome(); });
+  document.getElementById('btn-det-save').addEventListener('click',   saveDetails);
+  document.getElementById('btn-det-delete').addEventListener('click', deleteExercise);
+
+  // New exercise
+  document.getElementById('btn-new-back').addEventListener('click', () => showScreen('screen-home'));
+  document.getElementById('btn-new-save').addEventListener('click', saveNewExercise);
+
+  // Log search
+  document.getElementById('log-search').addEventListener('input', renderLog);
+
+  // Settings
+  document.getElementById('btn-save-settings').addEventListener('click', () => {
+    cfg.url    = document.getElementById('cfg-url').value.trim();
+    cfg.secret = document.getElementById('cfg-secret').value;
+    saveCfg();
+    toast('✅ Indstillinger gemt');
+  });
+  document.getElementById('btn-sync').addEventListener('click', syncAll);
+  document.getElementById('btn-export-json').addEventListener('click', exportJson);
+
+  // PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
