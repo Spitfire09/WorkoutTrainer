@@ -187,6 +187,53 @@
     /* ── Progress bar ─────────────────────────────────────────── */
     .progress-wrap { background: var(--surface2); border-radius: 6px; height: 6px; overflow: hidden; }
     .progress-fill { background: var(--accent2); height: 100%; transition: width .3s; }
+
+    /* ── Connection status ────────────────────────────────────── */
+    #conn-status {
+      font-size: 13px; padding: 8px 12px; border-radius: var(--radius);
+      margin-top: 6px; display: none;
+    }
+    #conn-status.ok   { background: #1a3a28; color: var(--success); display: block; }
+    #conn-status.err  { background: #3a1a1a; color: var(--danger);  display: block; }
+    #conn-status.busy { background: var(--surface2); color: var(--muted); display: block; }
+
+    /* ── Quick-complete panel ─────────────────────────────────── */
+    #quick-panel {
+      position: fixed; inset: 0; z-index: 500; pointer-events: none;
+    }
+    #quick-panel.open { pointer-events: all; }
+    #qp-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0); transition: background .2s;
+    }
+    #quick-panel.open #qp-backdrop { background: rgba(0,0,0,.5); }
+    #qp-sheet {
+      position: absolute; left: 0; right: 0; bottom: 56px;
+      background: var(--surface);
+      border-top: 2px solid var(--accent);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 14px 16px 18px;
+      transform: translateY(100%);
+      transition: transform .25s ease;
+    }
+    #quick-panel.open #qp-sheet { transform: translateY(0); }
+    #qp-header {
+      display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px;
+    }
+    #qp-header-label { font-size: 12px; color: var(--accent2); min-width: 52px; padding-top: 2px; }
+    #qp-title { flex: 1; font-size: 15px; font-weight: 600; line-height: 1.35; }
+    #qp-close {
+      background: transparent; border: none; color: var(--muted);
+      font-size: 18px; cursor: pointer; padding: 0 4px; flex-shrink: 0;
+    }
+    .qp-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .qp-row label { font-size: 12px; color: var(--accent2); min-width: 52px; }
+    .qp-row input[type=number] {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 12px; border-radius: var(--radius);
+      font-size: 16px; text-align: right;
+    }
+    .qp-row input[type=number]:focus { outline: 2px solid var(--accent2); }
   </style>
 </head>
 <body>
@@ -362,21 +409,49 @@
       <input type="password" id="cfg-secret" placeholder="WorkoutTracker6500!" />
     </div>
     <button class="btn btn-primary btn-full" id="btn-save-settings">💾 Gem indstillinger</button>
+    <button class="btn btn-ghost btn-full" id="btn-test-conn" style="margin-top:6px">🔗 Test Google Sheet forbindelse</button>
+    <div id="conn-status"></div>
     <div class="sep"></div>
     <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700;margin-top:8px">Data</p>
     <button class="btn btn-ghost btn-full" id="btn-sync">⟳ Synkronisér med Google Sheet</button>
     <button class="btn btn-ghost btn-full" id="btn-export-json" style="margin-top:6px">⬇ Eksportér lokal data (JSON)</button>
     <div class="sep"></div>
     <p class="settings-note">
-      Import af eksisterende data fra xlsx: POST til Apps Script URL med<br>
-      <code style="font-size:11px">{ "action": "importExercises", "secret": "…", "rows": […] }</code><br>
-      Se <code>GoogleSheet/seed-data.json</code> for de 56 øvelser og 421 log-poster.
+      <strong style="color:var(--text)">Sådan importerer du via seed-data.json:</strong><br>
+      1. Åbn <code>GoogleSheet/seed-data.json</code> — filen indeholder 56 øvelser og 421 log-poster.<br>
+      2. Send to POST-kald til din Apps Script URL:<br>
+      &nbsp;&nbsp;• <code style="font-size:11px">{ "action": "importExercises", "secret": "…", "rows": &lt;exercises-array&gt; }</code><br>
+      &nbsp;&nbsp;• <code style="font-size:11px">{ "action": "importLog",       "secret": "…", "rows": &lt;log-array&gt; }</code><br>
+      3. Du kan sende disse kald f.eks. med Postman, curl eller fra Apps Script-editoren.<br>
+      4. Herefter tryk <em>Synkronisér</em> for at trække data ned i appen.
     </p>
     <div class="sep"></div>
     <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v2</p>
   </div>
 
 </div><!-- /screens -->
+
+<!-- Quick-complete panel (home screen) -->
+<div id="quick-panel">
+  <div id="qp-backdrop"></div>
+  <div id="qp-sheet">
+    <div id="qp-header">
+      <span id="qp-header-label">Øvelse</span>
+      <span id="qp-title"></span>
+      <button id="qp-close" aria-label="Luk">✕</button>
+    </div>
+    <div class="qp-row">
+      <label for="qp-weight">Vægt</label>
+      <input type="number" id="qp-weight" step="0.5" min="0" />
+      <button class="btn btn-success" id="qp-btn-done" style="min-width:90px">Udført</button>
+    </div>
+    <div class="qp-row">
+      <label for="qp-reps">Reps</label>
+      <input type="number" id="qp-reps" min="0" />
+      <button class="btn btn-primary" id="qp-btn-log" style="min-width:90px">Log</button>
+    </div>
+  </div>
+</div>
 
 <!-- Bottom nav -->
 <nav id="bottomnav" role="navigation" aria-label="Navigation">
@@ -531,8 +606,13 @@ function renderHome() {
         <p>Sidst: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${esc(ex.type)} dag ${esc(String(ex.day))}</p>
       </div>
       ${ex.completed === 'yes' ? '<span class="badge-done">✓</span>' : ''}
-      <span class="ex-card-arrow">›</span>`;
-    card.addEventListener('click', () => openDetails(ex));
+      <span class="ex-card-arrow" role="button" aria-label="Detaljer" tabindex="0">›</span>`;
+    // Arrow → full details screen
+    const arrow = card.querySelector('.ex-card-arrow');
+    arrow.addEventListener('click', e => { e.stopPropagation(); openDetails(ex); });
+    arrow.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openDetails(ex); } });
+    // Card → quick panel
+    card.addEventListener('click', () => openQuickPanel(ex));
     list.appendChild(card);
   });
 }
@@ -812,6 +892,140 @@ function exportJson() {
   a.click();
 }
 
+async function testConnection() {
+  const url    = document.getElementById('cfg-url').value.trim();
+  const secret = document.getElementById('cfg-secret').value;
+  const el     = document.getElementById('conn-status');
+
+  if (!url) { el.className = 'err'; el.textContent = '⚠️ Angiv en Apps Script URL først.'; return; }
+
+  el.className = 'busy'; el.textContent = '⏳ Tester forbindelse…';
+
+  try {
+    // Step 1: ping (no auth required)
+    const ping = await apiFetch(url);
+    if (!ping || ping.status !== 'ok') throw new Error('Uventet svar fra server');
+
+    // Step 2: verify secret by listing exercises
+    const check = await apiFetch(url + '?action=listExercises&secret=' + encodeURIComponent(secret));
+    if (check.status === 'error') {
+      el.className = 'err';
+      el.textContent = '⚠️ Forbundet, men nøgle er forkert: ' + check.message;
+    } else {
+      el.className = 'ok';
+      el.textContent = '✅ Forbundet! Google Sheet svarer korrekt.';
+    }
+  } catch (e) {
+    el.className = 'err';
+    el.textContent = '❌ Forbindelsesfejl: ' + e.message;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  QUICK-COMPLETE PANEL
+// ══════════════════════════════════════════════════════════════════
+let currentQuickEx = null;
+
+function openQuickPanel(ex) {
+  currentQuickEx = ex;
+  document.getElementById('qp-title').textContent = ex.exercise || '';
+  document.getElementById('qp-weight').value = ex.todayWeight ?? ex.lastWeight ?? 0;
+  document.getElementById('qp-reps').value = ex.todayReps ?? ex.lastReps ?? 0;
+  document.getElementById('quick-panel').classList.add('open');
+}
+
+function closeQuickPanel() {
+  document.getElementById('quick-panel').classList.remove('open');
+  currentQuickEx = null;
+}
+
+async function quickDone() {
+  if (!currentQuickEx) return;
+  const ex = currentQuickEx;
+
+  // Read new values before mutating the exercise object.
+  // The app is local-first: we persist locally immediately so the UI stays
+  // consistent even when offline. A failed sync only shows a warning toast.
+  const todayWeight = Number(document.getElementById('qp-weight').value) || 0;
+  const todayReps   = Number(document.getElementById('qp-reps').value)   || 0;
+  const completedDate = new Date().toISOString().slice(0, 10);
+
+  ex.todayWeight = todayWeight;
+  ex.todayReps   = todayReps;
+  ex.completed   = 'yes';
+  ex.lastCompletedDate = completedDate;
+
+  const logEntry = {
+    entryId:     uid(),
+    date:        new Date().toLocaleString('da-DK'),
+    type:        ex.type,
+    exercise:    ex.exercise,
+    day:         String(ex.day),
+    lastWeight:  ex.lastWeight,
+    todayWeight,
+    lastReps:    ex.lastReps,
+    todayReps,
+    dateOnly:    completedDate,
+    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}),
+    set:         ex.set,
+    synced:      false
+  };
+  logEntries.unshift(logEntry);
+  save();
+
+  if (cfg.url) {
+    spinner(true);
+    try {
+      await api({ action: 'markCompleted', entryId: ex.entryId,
+        todayWeight, todayReps, logEntry });
+      ex.synced = true; logEntry.synced = true; save();
+    } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
+    spinner(false);
+  }
+
+  closeQuickPanel();
+  toast('✅ ' + ex.exercise + ' afsluttet!');
+  renderHome();
+}
+
+async function quickLog() {
+  if (!currentQuickEx) return;
+  const ex = currentQuickEx;
+
+  const todayWeight = Number(document.getElementById('qp-weight').value) || 0;
+  const todayReps   = Number(document.getElementById('qp-reps').value)   || 0;
+
+  const logEntry = {
+    entryId:     uid(),
+    date:        new Date().toLocaleString('da-DK'),
+    type:        ex.type,
+    exercise:    ex.exercise,
+    day:         String(ex.day),
+    lastWeight:  ex.lastWeight,
+    todayWeight,
+    lastReps:    ex.lastReps,
+    todayReps,
+    dateOnly:    new Date().toISOString().slice(0, 10),
+    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'}),
+    set:         ex.set,
+    synced:      false
+  };
+  logEntries.unshift(logEntry);
+  save();
+
+  if (cfg.url) {
+    spinner(true);
+    try {
+      await api({ action: 'logWorkout', entry: logEntry });
+      logEntry.synced = true; save();
+    } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
+    spinner(false);
+  }
+
+  closeQuickPanel();
+  toast('📝 ' + ex.exercise + ' logget!');
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  UTILITY
 // ══════════════════════════════════════════════════════════════════
@@ -864,10 +1078,20 @@ document.addEventListener('DOMContentLoaded', () => {
     cfg.url    = document.getElementById('cfg-url').value.trim();
     cfg.secret = document.getElementById('cfg-secret').value;
     saveCfg();
+    // Reset connection status when settings change
+    const el = document.getElementById('conn-status');
+    el.className = ''; el.textContent = '';
     toast('✅ Indstillinger gemt');
   });
+  document.getElementById('btn-test-conn').addEventListener('click', testConnection);
   document.getElementById('btn-sync').addEventListener('click', syncAll);
   document.getElementById('btn-export-json').addEventListener('click', exportJson);
+
+  // Quick panel
+  document.getElementById('qp-close').addEventListener('click', closeQuickPanel);
+  document.getElementById('qp-backdrop').addEventListener('click', closeQuickPanel);
+  document.getElementById('qp-btn-done').addEventListener('click', quickDone);
+  document.getElementById('qp-btn-log').addEventListener('click', quickLog);
 
   // PWA
   if ('serviceWorker' in navigator) {
