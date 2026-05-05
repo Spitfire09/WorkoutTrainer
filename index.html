@@ -45,25 +45,26 @@
       font-size: 22px; cursor: pointer; padding: 6px; line-height: 1;
     }
 
-    /* ── Bottom nav ───────────────────────────────────────────── */
-    #bottomnav {
-      height: 56px; background: var(--surface2);
-      display: flex; flex-shrink: 0; border-top: 1px solid var(--border);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* ── Top nav ──────────────────────────────────────────────── */
+    #topnav {
+      height: 52px; background: var(--surface2);
+      display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border);
     }
-    #bottomnav button {
+    #topnav button {
       flex: 1; background: transparent; border: none; color: var(--muted);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       font-size: 10px; gap: 3px; cursor: pointer; transition: color .15s;
+      border-bottom: 2px solid transparent;
+      padding: 6px 4px 4px;
     }
-    #bottomnav button.active { color: var(--accent2); }
-    #bottomnav button svg { width: 22px; height: 22px; }
+    #topnav button.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+    #topnav button svg { width: 20px; height: 20px; }
 
     /* ── Screen container ─────────────────────────────────────── */
     #screens { flex: 1; overflow: hidden; position: relative; }
     .screen {
       position: absolute; inset: 0; overflow-y: auto;
-      padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: none; flex-direction: column; gap: 10px;
+      padding: 12px; display: none; flex-direction: column; gap: 10px;
     }
     .screen.active { display: flex; }
 
@@ -146,7 +147,7 @@
 
     /* ── Toast ────────────────────────────────────────────────── */
     #toast {
-      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       background: #222d3a; color: #fff; padding: 10px 20px;
       border-radius: 24px; font-size: 14px; pointer-events: none;
       opacity: 0; transition: opacity .25s; z-index: 999; white-space: nowrap;
@@ -209,7 +210,7 @@
     }
     #quick-panel.open #qp-backdrop { background: rgba(0,0,0,.5); }
     #qp-sheet {
-      position: absolute; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      position: absolute; left: 0; right: 0; bottom: 0;
       background: var(--surface);
       border-top: 2px solid var(--accent);
       border-radius: var(--radius) var(--radius) 0 0;
@@ -245,6 +246,36 @@
   <button id="btn-refresh" title="Opdater" aria-label="Opdater">⟳</button>
   <button id="btn-newday" title="Ny dag" aria-label="Ny dag" style="font-size:14px;font-weight:700;">NY DAG</button>
 </div>
+
+<!-- Top nav -->
+<nav id="topnav" role="navigation" aria-label="Navigation">
+  <button class="active" data-screen="screen-home" aria-label="Øvelser">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 12h2m14 0h2M6.5 7.5l1.5 1.5M16 7.5l-1.5 1.5M12 5V3M8 12a4 4 0 018 0"/>
+    </svg>
+    Øvelser
+  </button>
+  <button data-screen="screen-log" aria-label="Log">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Log
+  </button>
+  <button data-screen="screen-new" aria-label="Ny øvelse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+    Ny øvelse
+  </button>
+  <button data-screen="screen-settings" aria-label="Indstillinger">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+    </svg>
+    Indstillinger
+  </button>
+</nav>
 
 <!-- Screens -->
 <div id="screens">
@@ -453,36 +484,6 @@
   </div>
 </div>
 
-<!-- Bottom nav -->
-<nav id="bottomnav" role="navigation" aria-label="Navigation">
-  <button class="active" data-screen="screen-home" aria-label="Øvelser">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 12h2m14 0h2M6.5 7.5l1.5 1.5M16 7.5l-1.5 1.5M12 5V3M8 12a4 4 0 018 0"/>
-    </svg>
-    Øvelser
-  </button>
-  <button data-screen="screen-log" aria-label="Log">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-    Log
-  </button>
-  <button data-screen="screen-new" aria-label="Ny øvelse">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-    </svg>
-    Ny øvelse
-  </button>
-  <button data-screen="screen-settings" aria-label="Indstillinger">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-    </svg>
-    Indstillinger
-  </button>
-</nav>
-
 <div id="toast"></div>
 <div id="spinner"><div class="spin"></div></div>
 
@@ -536,7 +537,7 @@ function spinner(on) { document.getElementById('spinner').style.display = on ? '
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('#bottomnav button').forEach(b => {
+  document.querySelectorAll('#topnav button').forEach(b => {
     b.classList.toggle('active', b.dataset.screen === id);
   });
   const titles = {
@@ -1060,8 +1061,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   renderHome();
 
-  // Bottom nav
-  document.querySelectorAll('#bottomnav button[data-screen]').forEach(btn => {
+  // Top nav
+  document.querySelectorAll('#topnav button[data-screen]').forEach(btn => {
     btn.addEventListener('click', () => {
       showScreen(btn.dataset.screen);
       if (btn.dataset.screen === 'screen-log') renderLog();
