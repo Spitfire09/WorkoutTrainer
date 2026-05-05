@@ -1,0 +1,44 @@
+[
+  {
+    "entryId": "bbbbbbbb-0001-0001-0001-000000000001",
+    "date": "2026-04-29 18:00",
+    "type": "Push",
+    "exercise": "Bench press",
+    "day": "1",
+    "lastWeight": 57.5,
+    "todayWeight": 60,
+    "lastReps": 10,
+    "todayReps": 10,
+    "dateOnly": "2026-04-29",
+    "timeOnly": "18:00",
+    "set": 3
+  },
+  {
+    "entryId": "bbbbbbbb-0002-0002-0002-000000000002",
+    "date": "2026-04-28 17:30",
+    "type": "Pull",
+    "exercise": "Pull-ups",
+    "day": "2",
+    "lastWeight": 0,
+    "todayWeight": 0,
+    "lastReps": 7,
+    "todayReps": 8,
+    "dateOnly": "2026-04-28",
+    "timeOnly": "17:30",
+    "set": 4
+  },
+  {
+    "entryId": "bbbbbbbb-0003-0003-0003-000000000003",
+    "date": "2026-04-27 16:45",
+    "type": "Leg",
+    "exercise": "Squat",
+    "day": "3",
+    "lastWeight": 77.5,
+    "todayWeight": 80,
+    "lastReps": 8,
+    "todayReps": 8,
+    "dateOnly": "2026-04-27",
+    "timeOnly": "16:45",
+    "set": 4
+  }
+]

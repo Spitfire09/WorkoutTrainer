@@ -447,6 +447,16 @@
     <button class="btn btn-ghost btn-full" id="btn-sync">⟳ Synkronisér med Google Sheet</button>
     <button class="btn btn-ghost btn-full" id="btn-export-json" style="margin-top:6px">⬇ Eksportér lokal data (JSON)</button>
     <div class="sep"></div>
+    <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700;margin-top:8px">Importér fra fil</p>
+    <p class="settings-note" style="margin-bottom:8px">Indlæs dine gemte øvelser og log direkte fra en JSON-fil. Eksisterende poster med samme ID springes over (ingen dubletter). Se <code>sample-exercises.json</code> og <code>sample-log.json</code> for syntaks.</p>
+    <button class="btn btn-ghost btn-full" id="btn-import-combined">📂 Importér kombineret fil (øvelser + log)</button>
+    <button class="btn btn-ghost btn-full" id="btn-import-exercises" style="margin-top:6px">📂 Importér øvelser (JSON)</button>
+    <button class="btn btn-ghost btn-full" id="btn-import-log" style="margin-top:6px">📂 Importér log (JSON)</button>
+    <!-- hidden file inputs -->
+    <input type="file" id="file-import-combined"  accept=".json" style="display:none" />
+    <input type="file" id="file-import-exercises" accept=".json" style="display:none" />
+    <input type="file" id="file-import-log"       accept=".json" style="display:none" />
+    <div class="sep"></div>
     <p class="settings-note">
       <strong style="color:var(--text)">Sådan importerer du via seed-data.json:</strong><br>
       1. Åbn <code>GoogleSheet/seed-data.json</code> — filen indeholder 56 øvelser og 421 log-poster.<br>
@@ -895,6 +905,106 @@ async function api(body) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  IMPORT FROM FILE
+// ══════════════════════════════════════════════════════════════════
+
+/** Normalise an exercise object that may use PascalCase keys (seed-data.json)
+ *  or the internal camelCase keys used by the app. */
+function normalizeExercise(e) {
+  return {
+    entryId:           e.entryId           || e.EntryID         || uid(),
+    id:                e.id                ?? e.ID              ?? null,
+    date:              e.date              || e.Date             || '',
+    type:              e.type              || e.Type             || '',
+    category:          e.category          || e.Category         || '',
+    day:               String(e.day        ?? e.Day              ?? ''),
+    exercise:          e.exercise          || e.Exercise         || '',
+    lastWeight:        Number(e.lastWeight  ?? e.LastWeight       ?? 0) || 0,
+    todayWeight:       Number(e.todayWeight ?? e.TodayWeight      ?? 0) || 0,
+    lastReps:          Number(e.lastReps    ?? e.LastReps         ?? 0) || 0,
+    todayReps:         Number(e.todayReps   ?? e.TodayReps        ?? 0) || 0,
+    set:               Number(e.set         ?? e.Set              ?? 3) || 3,
+    completed:         e.completed         || e.Completed        || 'no',
+    lastCompletedDate: e.lastCompletedDate || e.LastCompletedDate || '',
+    description:       e.description       || e.Description      || '',
+    rpe:               e.rpe               ?? e.RPE              ?? null,
+    synced:            false
+  };
+}
+
+/** Normalise a log entry that may use PascalCase keys (seed-data.json)
+ *  or the internal camelCase keys used by the app. */
+function normalizeLogEntry(e) {
+  return {
+    entryId:     e.entryId     || e.EntryID  || uid(),
+    date:        e.date        || e.Date      || '',
+    type:        e.type        || e.Type      || '',
+    exercise:    e.exercise    || e.Exercise  || '',
+    day:         String(e.day  ?? e.Day       ?? ''),
+    lastWeight:  Number(e.lastWeight  ?? e.LastWeight  ?? 0) || 0,
+    todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? 0) || 0,
+    lastReps:    Number(e.lastReps    ?? e.LastReps    ?? 0) || 0,
+    todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? 0) || 0,
+    dateOnly:    e.dateOnly    || e.DateOnly  || '',
+    timeOnly:    e.timeOnly    || e.TimeOnly  || '',
+    set:         e.set         ?? e.Set       ?? null,
+    synced:      false
+  };
+}
+
+function mergeExercises(incoming) {
+  const existingIds = new Set(exercises.map(e => e.entryId));
+  let added = 0;
+  incoming.forEach(raw => {
+    const ex = normalizeExercise(raw);
+    if (!existingIds.has(ex.entryId)) {
+      exercises.push(ex);
+      existingIds.add(ex.entryId);
+      added++;
+    }
+  });
+  return added;
+}
+
+function mergeLog(incoming) {
+  const existingIds = new Set(logEntries.map(e => e.entryId));
+  let added = 0;
+  incoming.forEach(raw => {
+    const entry = normalizeLogEntry(raw);
+    if (!existingIds.has(entry.entryId)) {
+      logEntries.push(entry);
+      existingIds.add(entry.entryId);
+      added++;
+    }
+  });
+  return added;
+}
+
+function readJsonFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try { resolve(JSON.parse(e.target.result)); }
+      catch { reject(new Error('Ugyldig JSON-fil')); }
+    };
+    reader.onerror = () => reject(new Error('Kunne ikke læse filen'));
+    reader.readAsText(file);
+  });
+}
+
+function importExercisesFromFile() {
+  document.getElementById('file-import-exercises').click();
+}
+
+function importLogFromFile() {
+  document.getElementById('file-import-log').click();
+}
+
+function importCombinedFromFile() {
+  document.getElementById('file-import-combined').click();
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  SETTINGS
 // ══════════════════════════════════════════════════════════════════
 function loadSettings() {
@@ -1102,6 +1212,54 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-test-conn').addEventListener('click', testConnection);
   document.getElementById('btn-sync').addEventListener('click', syncAll);
   document.getElementById('btn-export-json').addEventListener('click', exportJson);
+
+  // Import from file
+  document.getElementById('btn-import-exercises').addEventListener('click', importExercisesFromFile);
+  document.getElementById('btn-import-log').addEventListener('click', importLogFromFile);
+  document.getElementById('btn-import-combined').addEventListener('click', importCombinedFromFile);
+
+  document.getElementById('file-import-exercises').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      const data = await readJsonFile(file);
+      const rows = Array.isArray(data) ? data : (data.exercises || []);
+      if (!rows.length) { toast('⚠️ Ingen øvelser fundet i filen'); return; }
+      const added = mergeExercises(rows);
+      save(); renderHome();
+      toast(`✅ ${added} nye øvelser indlæst (${rows.length - added} sprunget over)`);
+    } catch(err) { toast('❌ ' + err.message); }
+  });
+
+  document.getElementById('file-import-log').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      const data = await readJsonFile(file);
+      const rows = Array.isArray(data) ? data : (data.log || data.entries || []);
+      if (!rows.length) { toast('⚠️ Ingen log-poster fundet i filen'); return; }
+      const added = mergeLog(rows);
+      save(); renderLog();
+      toast(`✅ ${added} nye log-poster indlæst (${rows.length - added} sprunget over)`);
+    } catch(err) { toast('❌ ' + err.message); }
+  });
+
+  document.getElementById('file-import-combined').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      const data = await readJsonFile(file);
+      const exRows  = Array.isArray(data) ? data : (data.exercises || []);
+      const logRows = Array.isArray(data) ? []   : (data.log || data.entries || []);
+      const addedEx  = mergeExercises(exRows);
+      const addedLog = mergeLog(logRows);
+      save(); renderHome();
+      toast(`✅ Importeret: ${addedEx} øvelser, ${addedLog} log-poster`);
+    } catch(err) { toast('❌ ' + err.message); }
+  });
 
   // Quick panel
   document.getElementById('qp-close').addEventListener('click', closeQuickPanel);
