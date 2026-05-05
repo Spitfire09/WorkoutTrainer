@@ -264,8 +264,8 @@
     </div>
     <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     <p id="progress-label" class="section-hdr" style="text-align:right"></p>
+    <button class="btn btn-primary btn-full" id="btn-add-exercise">+ Ny øvelse</button>
     <div id="exercise-list"></div>
-    <button class="btn btn-primary btn-full" id="btn-add-exercise" style="margin-top:4px">+ Ny øvelse</button>
   </div>
 
   <!-- ─── SCREEN: Details ───────────────────────────────────── -->
@@ -675,6 +675,7 @@ async function saveDetails() {
   if (cfg.url) {
     spinner(true);
     try {
+      await ensureExerciseSynced(ex);
       await api({ action: 'markCompleted', entryId: ex.entryId,
         todayWeight: ex.todayWeight, todayReps: ex.todayReps,
         fields: { TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
@@ -840,6 +841,16 @@ async function deleteExercise() {
 // ══════════════════════════════════════════════════════════════════
 //  SYNC WITH GOOGLE SHEET
 // ══════════════════════════════════════════════════════════════════
+
+/** If an exercise has never been synced to Google Sheets, create it now. */
+async function ensureExerciseSynced(ex) {
+  if (!ex.synced && cfg.url) {
+    await api({ action: 'newExercise', exercise: ex });
+    ex.synced = true;
+    save();
+  }
+}
+
 async function syncAll() {
   if (!cfg.url) { toast('⚠️ Angiv Apps Script URL under Indstillinger'); return; }
   spinner(true);
@@ -976,6 +987,7 @@ async function quickDone() {
   if (cfg.url) {
     spinner(true);
     try {
+      await ensureExerciseSynced(ex);
       await api({ action: 'markCompleted', entryId: ex.entryId,
         todayWeight, todayReps, logEntry });
       ex.synced = true; logEntry.synced = true; save();
