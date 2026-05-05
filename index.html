@@ -872,6 +872,13 @@ async function syncAll() {
   if (!cfg.url) { toast('⚠️ Angiv Apps Script URL under Indstillinger'); return; }
   spinner(true);
   try {
+    // Push any locally imported / unsynced items to Google Sheet first
+    const unsyncedEx  = exercises.filter(e => !e.synced);
+    const unsyncedLog = logEntries.filter(e => !e.synced);
+    if (unsyncedEx.length)  await api({ action: 'importExercises', rows: unsyncedEx });
+    if (unsyncedLog.length) await api({ action: 'importLog',       rows: unsyncedLog });
+
+    // Then fetch the authoritative data from Google Sheet
     const [exRes, logRes] = await Promise.all([
       apiFetch(cfg.url + '?action=listExercises&secret=' + encodeURIComponent(cfg.secret)),
       apiFetch(cfg.url + '?action=listLog&secret='       + encodeURIComponent(cfg.secret))
