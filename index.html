@@ -912,22 +912,22 @@ async function api(body) {
  *  or the internal camelCase keys used by the app. */
 function normalizeExercise(e) {
   return {
-    entryId:           e.entryId           || e.EntryID        || uid(),
-    id:                e.id                != null ? e.id      : (e.ID != null ? e.ID : null),
-    date:              e.date              || e.Date            || '',
-    type:              e.type              || e.Type            || '',
-    category:          e.category          || e.Category        || '',
-    day:               String(e.day        != null ? e.day      : (e.Day != null ? e.Day : '')),
-    exercise:          e.exercise          || e.Exercise        || '',
-    lastWeight:        Number(e.lastWeight  != null ? e.lastWeight  : (e.LastWeight  != null ? e.LastWeight  : 0)) || 0,
-    todayWeight:       Number(e.todayWeight != null ? e.todayWeight : (e.TodayWeight != null ? e.TodayWeight : 0)) || 0,
-    lastReps:          Number(e.lastReps    != null ? e.lastReps    : (e.LastReps    != null ? e.LastReps    : 0)) || 0,
-    todayReps:         Number(e.todayReps   != null ? e.todayReps   : (e.TodayReps   != null ? e.TodayReps   : 0)) || 0,
-    set:               Number(e.set         != null ? e.set         : (e.Set         != null ? e.Set         : 3)) || 3,
-    completed:         e.completed         || e.Completed       || 'no',
+    entryId:           e.entryId           || e.EntryID         || uid(),
+    id:                e.id                ?? e.ID              ?? null,
+    date:              e.date              || e.Date             || '',
+    type:              e.type              || e.Type             || '',
+    category:          e.category          || e.Category         || '',
+    day:               String(e.day        ?? e.Day              ?? ''),
+    exercise:          e.exercise          || e.Exercise         || '',
+    lastWeight:        Number(e.lastWeight  ?? e.LastWeight       ?? 0) || 0,
+    todayWeight:       Number(e.todayWeight ?? e.TodayWeight      ?? 0) || 0,
+    lastReps:          Number(e.lastReps    ?? e.LastReps         ?? 0) || 0,
+    todayReps:         Number(e.todayReps   ?? e.TodayReps        ?? 0) || 0,
+    set:               Number(e.set         ?? e.Set              ?? 3) || 3,
+    completed:         e.completed         || e.Completed        || 'no',
     lastCompletedDate: e.lastCompletedDate || e.LastCompletedDate || '',
-    description:       e.description       || e.Description     || '',
-    rpe:               e.rpe               != null ? e.rpe      : (e.RPE != null ? e.RPE : null),
+    description:       e.description       || e.Description      || '',
+    rpe:               e.rpe               ?? e.RPE              ?? null,
     synced:            false
   };
 }
@@ -936,18 +936,18 @@ function normalizeExercise(e) {
  *  or the internal camelCase keys used by the app. */
 function normalizeLogEntry(e) {
   return {
-    entryId:     e.entryId     || e.EntryID   || uid(),
-    date:        e.date        || e.Date       || '',
-    type:        e.type        || e.Type       || '',
-    exercise:    e.exercise    || e.Exercise   || '',
-    day:         String(e.day  != null ? e.day : (e.Day != null ? e.Day : '')),
-    lastWeight:  Number(e.lastWeight  != null ? e.lastWeight  : (e.LastWeight  != null ? e.LastWeight  : 0)) || 0,
-    todayWeight: Number(e.todayWeight != null ? e.todayWeight : (e.TodayWeight != null ? e.TodayWeight : 0)) || 0,
-    lastReps:    Number(e.lastReps    != null ? e.lastReps    : (e.LastReps    != null ? e.LastReps    : 0)) || 0,
-    todayReps:   Number(e.todayReps   != null ? e.todayReps   : (e.TodayReps   != null ? e.TodayReps   : 0)) || 0,
-    dateOnly:    e.dateOnly    || e.DateOnly   || '',
-    timeOnly:    e.timeOnly    || e.TimeOnly   || '',
-    set:         e.set         != null ? e.set : (e.Set != null ? e.Set : null),
+    entryId:     e.entryId     || e.EntryID  || uid(),
+    date:        e.date        || e.Date      || '',
+    type:        e.type        || e.Type      || '',
+    exercise:    e.exercise    || e.Exercise  || '',
+    day:         String(e.day  ?? e.Day       ?? ''),
+    lastWeight:  Number(e.lastWeight  ?? e.LastWeight  ?? 0) || 0,
+    todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? 0) || 0,
+    lastReps:    Number(e.lastReps    ?? e.LastReps    ?? 0) || 0,
+    todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? 0) || 0,
+    dateOnly:    e.dateOnly    || e.DateOnly  || '',
+    timeOnly:    e.timeOnly    || e.TimeOnly  || '',
+    set:         e.set         ?? e.Set       ?? null,
     synced:      false
   };
 }
