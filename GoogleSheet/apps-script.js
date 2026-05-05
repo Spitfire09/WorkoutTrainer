@@ -398,9 +398,20 @@ function doPost(e) {
       const rows   = data.rows || [];
       const today  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
       let imported = 0;
+      let skipped  = 0;
+
+      // Build a set of existing entryIds to avoid duplicates
+      const existingIds = new Set();
+      const lastRow = sheet.getLastRow();
+      if (lastRow >= 2) {
+        sheet.getRange(2, 1, lastRow - 1, 1).getValues().forEach(r => {
+          if (r[0]) existingIds.add(String(r[0]));
+        });
+      }
 
       rows.forEach(ex => {
         const entryId = ex.entryId || ex.__PowerAppsId__ || ex.EntryID || _uid();
+        if (existingIds.has(String(entryId))) { skipped++; return; }
         sheet.appendRow([
           entryId,
           ex.ID               !== undefined ? ex.ID               : '',
@@ -419,9 +430,10 @@ function doPost(e) {
           ex.Description      || ex.description      || '',
           ex.RPE              !== undefined ? ex.RPE : ex.rpe !== undefined ? ex.rpe : ''
         ]);
+        existingIds.add(String(entryId));
         imported++;
       });
-      return _ok({ imported });
+      return _ok({ imported, skipped });
     }
 
     // ── importLog ────────────────────────────────────────────────
@@ -432,9 +444,20 @@ function doPost(e) {
 
       const rows   = data.rows || [];
       let imported = 0;
+      let skipped  = 0;
+
+      // Build a set of existing entryIds to avoid duplicates
+      const existingIds = new Set();
+      const lastRow = sheet.getLastRow();
+      if (lastRow >= 2) {
+        sheet.getRange(2, 1, lastRow - 1, 1).getValues().forEach(r => {
+          if (r[0]) existingIds.add(String(r[0]));
+        });
+      }
 
       rows.forEach(entry => {
         const entryId = entry.entryId || entry.__PowerAppsId__ || entry.EntryID || _uid();
+        if (existingIds.has(String(entryId))) { skipped++; return; }
         sheet.appendRow([
           entryId,
           entry.Date        || entry.date        || '',
@@ -449,9 +472,10 @@ function doPost(e) {
           entry.TimeOnly    || entry.timeOnly    || '',
           entry.Set         !== undefined ? entry.Set : entry.set !== undefined ? entry.set : ''
         ]);
+        existingIds.add(String(entryId));
         imported++;
       });
-      return _ok({ imported });
+      return _ok({ imported, skipped });
     }
 
     return _err('Ukendt action: ' + (data.action || ''));
