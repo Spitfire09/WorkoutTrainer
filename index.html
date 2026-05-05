@@ -293,6 +293,11 @@
       <select id="sel-day" aria-label="Filtrer dag">
         <option value="">Alle dage</option>
       </select>
+      <select id="sel-category" aria-label="Filtrer kategori">
+        <option value="">Alle kategorier</option>
+        <option>Compound</option>
+        <option>Isolation</option>
+      </select>
     </div>
     <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     <p id="progress-label" class="section-hdr" style="text-align:right"></p>
@@ -587,12 +592,14 @@ function buildDayOptions() {
 
 function renderHome() {
   buildDayOptions();
-  const typeFilter = document.getElementById('sel-type').value;
-  const dayFilter  = document.getElementById('sel-day').value;
+  const typeFilter     = document.getElementById('sel-type').value;
+  const dayFilter      = document.getElementById('sel-day').value;
+  const categoryFilter = document.getElementById('sel-category').value;
 
   let filtered = exercises;
-  if (typeFilter) filtered = filtered.filter(e => e.type === typeFilter);
-  if (dayFilter)  filtered = filtered.filter(e => String(e.day) === dayFilter);
+  if (typeFilter)     filtered = filtered.filter(e => e.type === typeFilter);
+  if (dayFilter)      filtered = filtered.filter(e => String(e.day) === dayFilter);
+  if (categoryFilter) filtered = filtered.filter(e => e.category === categoryFilter);
 
   const done  = filtered.filter(e => e.completed === 'yes').length;
   const total = filtered.length;
@@ -1193,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Home filters
   document.getElementById('sel-type').addEventListener('change', renderHome);
   document.getElementById('sel-day').addEventListener('change',  renderHome);
+  document.getElementById('sel-category').addEventListener('change', renderHome);
 
   // Details
   document.getElementById('btn-det-back').addEventListener('click',   () => { showScreen('screen-home'); renderHome(); });
