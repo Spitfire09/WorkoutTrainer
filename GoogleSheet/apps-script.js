@@ -129,6 +129,8 @@ function doGet(e) {
       return _err('Ugyldig nøgle');
     }
 
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
     // ── list exercises ───────────────────────────────────────────
     if (action === 'listExercises') {
       const sheet = ss.getSheetByName(SHEET_EXERCISES);
