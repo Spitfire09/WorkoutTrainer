@@ -794,7 +794,7 @@
   <p class="timer-title">⏱ Hvil</p>
   <div class="timer-ring">
     <svg viewBox="0 0 200 200">
-      <!-- r="88" must match TIMER_RING_RADIUS in JS -->
+      <!-- r="88" must match TIMER_RING_RADIUS in JS; stroke-dasharray = 2*π*88 = 552.92 -->
       <circle class="timer-ring-bg" cx="100" cy="100" r="88"/>
       <circle class="timer-ring-fg" id="timer-ring-fg" cx="100" cy="100" r="88"
         stroke-dasharray="552.92" stroke-dashoffset="0"/>
@@ -1772,10 +1772,10 @@ function renderChart() {
     ctx.fillStyle = weights[0] >= maxW ? '#fbbf24' : '#22d3ee';
     ctx.beginPath(); ctx.arc(xPos(0), yPos(weights[0]), 6, 0, Math.PI * 2); ctx.fill();
   } else {
-    // Area fill (gradient)
+    // Area fill (gradient) – rgba values correspond to --accent2 (#22d3ee)
     const areaGrad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
-    areaGrad.addColorStop(0, 'rgba(34,211,238,0.22)');
-    areaGrad.addColorStop(1, 'rgba(34,211,238,0)');
+    areaGrad.addColorStop(0, 'rgba(34,211,238,0.22)');  // --accent2 at 22% opacity
+    areaGrad.addColorStop(1, 'rgba(34,211,238,0)');     // --accent2 transparent
     ctx.fillStyle = areaGrad;
     ctx.beginPath();
     ctx.moveTo(xPos(0), PAD.top + cH);
