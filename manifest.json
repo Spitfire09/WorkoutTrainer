@@ -4,8 +4,8 @@
   "description": "Træningsdagbog — log dine øvelser og se din fremgang",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b1218",
-  "theme_color": "#3860b2",
+  "background_color": "#060d16",
+  "theme_color": "#0d1825",
   "orientation": "portrait",
   "icons": [
     {
