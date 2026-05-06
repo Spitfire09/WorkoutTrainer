@@ -47,7 +47,7 @@ const EXERCISE_HEADERS = [
 const LOG_HEADERS = [
   'EntryID', 'Date', 'Type', 'Exercise', 'Day',
   'LastWeight', 'TodayWeight', 'LastReps', 'TodayReps',
-  'DateOnly', 'TimeOnly', 'Set'
+  'DateOnly', 'TimeOnly', 'Set', 'SetNumber', 'MuscleGroup'
 ];
 
 // ════════════════════════════════════════════════════════════════
@@ -175,7 +175,9 @@ function doGet(e) {
         todayReps:   r.TodayReps   !== '' ? Number(r.TodayReps)   : 0,
         dateOnly:    r.DateOnly  ? String(r.DateOnly)  : '',
         timeOnly:    r.TimeOnly  ? String(r.TimeOnly)  : '',
-        set:         r.Set !== '' ? Number(r.Set) : null,
+        set:         r.Set       !== '' ? Number(r.Set)       : null,
+        setNumber:   r.SetNumber !== '' ? Number(r.SetNumber) : null,
+        muscleGroup: String(r.MuscleGroup || ''),
         synced:      true
       }));
       // Nyeste først
@@ -470,7 +472,9 @@ function doPost(e) {
           entry.TodayReps   !== undefined ? entry.TodayReps   : entry.todayReps   !== undefined ? entry.todayReps   : 0,
           entry.DateOnly    || entry.dateOnly    || '',
           entry.TimeOnly    || entry.timeOnly    || '',
-          entry.Set         !== undefined ? entry.Set : entry.set !== undefined ? entry.set : ''
+          entry.Set         !== undefined ? entry.Set         : entry.set         !== undefined ? entry.set         : '',
+          entry.SetNumber   !== undefined ? entry.SetNumber   : entry.setNumber   !== undefined ? entry.setNumber   : '',
+          entry.MuscleGroup || entry.muscleGroup || ''
         ]);
         existingIds.add(String(entryId));
         imported++;
@@ -515,7 +519,9 @@ function _appendLogEntry(ss, entry) {
     entry.todayReps   !== undefined ? entry.todayReps   : entry.TodayReps   !== undefined ? entry.TodayReps   : 0,
     dateOnly,
     timeOnly,
-    entry.set         !== undefined ? entry.set         : entry.Set         !== undefined ? entry.Set         : ''
+    entry.set         !== undefined ? entry.set         : entry.Set         !== undefined ? entry.Set         : '',
+    entry.setNumber   !== undefined ? entry.setNumber   : entry.SetNumber   !== undefined ? entry.SetNumber   : '',
+    entry.muscleGroup || entry.MuscleGroup || ''
   ]);
 
   return entryId;
@@ -526,16 +532,32 @@ function _appendLogEntry(ss, entry) {
 // ════════════════════════════════════════════════════════════════
 
 /**
+ * Tilføjer manglende kolonneoverskrifter til et eksisterende sheet.
+ * Bruges til at migrere eksisterende sheets ved tilføjelse af nye kolonner.
+ */
+function _ensureColumns(sheet, headers) {
+  const lastCol = sheet.getLastColumn();
+  if (lastCol < headers.length) {
+    for (let i = lastCol; i < headers.length; i++) {
+      sheet.getRange(1, i + 1).setValue(headers[i])
+        .setFontWeight('bold');
+    }
+  }
+}
+
+/**
  * Kør denne funktion manuelt i Apps Script editoren
  * for at initialisere begge sheets med korrekte headers.
  */
 function setupSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
+  const exSheet  = _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
     r => r.setBackground('#1a2a38').setFontColor('#4ec9f7'));
-  _getOrCreateSheet(ss, SHEET_LOG, LOG_HEADERS,
+  const logSheet = _getOrCreateSheet(ss, SHEET_LOG, LOG_HEADERS,
     r => r.setBackground('#0f1923').setFontColor('#4ec9f7'));
-  SpreadsheetApp.getUi().alert('Sheets opsat ✅');
+  _ensureColumns(exSheet,  EXERCISE_HEADERS);
+  _ensureColumns(logSheet, LOG_HEADERS);
+  SpreadsheetApp.getUi().alert('Sheets opsat/opdateret ✅');
 }
 
 /**
