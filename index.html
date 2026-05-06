@@ -342,8 +342,8 @@
     <p class="section-hdr">Dagens træning</p>
     <div class="inline-inputs">
       <div class="form-group">
-        <label>Forrige vægt (kg)</label>
-        <input type="number" id="det-lastweight" step="0.5" readonly style="opacity:.6" />
+        <label>Mål vægt (kg)</label>
+        <input type="number" id="det-lastweight" step="0.5" />
       </div>
       <div class="form-group">
         <label>Dagens vægt (kg)</label>
@@ -352,8 +352,8 @@
     </div>
     <div class="inline-inputs">
       <div class="form-group">
-        <label>Forrige reps</label>
-        <input type="number" id="det-lastreps" readonly style="opacity:.6" />
+        <label>Mål reps</label>
+        <input type="number" id="det-lastreps" />
       </div>
       <div class="form-group">
         <label>Dagens reps</label>
@@ -627,7 +627,7 @@ function renderHome() {
     card.innerHTML = `
       <div class="ex-card-info">
         <h3>${esc(ex.exercise)}</h3>
-        <p>Sidst: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${esc(ex.type)} dag ${esc(String(ex.day))}</p>
+        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${esc(ex.type)} dag ${esc(String(ex.day))}</p>
       </div>
       ${ex.completed === 'yes' ? '<span class="badge-done">✓</span>' : ''}
       <span class="ex-card-arrow" role="button" aria-label="Detaljer" tabindex="0">›</span>`;
@@ -670,6 +670,8 @@ async function saveDetails() {
   ex.day         = document.getElementById('det-day').value.trim();
   ex.set         = Number(document.getElementById('det-set').value)         || 3;
   ex.rpe         = Number(document.getElementById('det-rpe').value)         || null;
+  ex.lastWeight  = Number(document.getElementById('det-lastweight').value)  || 0;
+  ex.lastReps    = Number(document.getElementById('det-lastreps').value)    || 0;
   ex.todayWeight = Number(document.getElementById('det-todayweight').value) || 0;
   ex.todayReps   = Number(document.getElementById('det-todayreps').value)   || 0;
   ex.description = document.getElementById('det-description').value.trim();
@@ -790,7 +792,7 @@ function renderLog() {
     card.innerHTML = `
       <div class="log-card-info">
         <h3>${esc(entry.exercise)}</h3>
-        <p>${entry.todayWeight} kg, ${entry.todayReps} reps (forrige: ${entry.lastWeight} kg, ${entry.lastReps} reps)</p>
+        <p>${entry.todayWeight} kg, ${entry.todayReps} reps (mål: ${entry.lastWeight} kg, ${entry.lastReps} reps)</p>
         <p>${esc(entry.dateOnly || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
       </div>
       <button class="btn-icon-danger" data-id="${entry.entryId}" title="Slet" aria-label="Slet log-post">🗑</button>`;
@@ -817,12 +819,10 @@ async function deleteLog(entryId) {
 //  NEW DAY
 // ══════════════════════════════════════════════════════════════════
 async function newDay() {
-  if (!confirm('Ny dag — nulstil alle afsluttede øvelser?\nForrige vægt ← Dagens vægt, Afsluttet ← nej')) return;
+  if (!confirm('Ny dag — nulstil alle afsluttede øvelser?\nAfsluttet ← nej')) return;
   let reset = 0;
   exercises.forEach(ex => {
     if (ex.completed === 'yes') {
-      ex.lastWeight = ex.todayWeight;
-      ex.lastReps   = ex.todayReps;
       ex.completed  = 'no';
       ex.synced     = false;
       reset++;
