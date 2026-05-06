@@ -858,6 +858,7 @@ async function saveDetails() {
     dateOnly:    new Date().toISOString().slice(0, 10),
     timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'}),
     set:         ex.set,
+    muscleGroup: ex.muscleGroup || '',
     isPR:        isNewPR,
     synced:      false
   };
@@ -1137,8 +1138,9 @@ function normalizeLogEntry(e) {
     dateOnly:    e.dateOnly    || e.DateOnly  || '',
     timeOnly:    e.timeOnly    || e.TimeOnly  || '',
     set:         e.set         ?? e.Set       ?? null,
-    setNumber:   e.setNumber   ?? null,
+    setNumber:   e.setNumber   ?? e.SetNumber ?? null,
     totalSets:   e.totalSets   ?? null,
+    muscleGroup: e.muscleGroup || e.MuscleGroup || '',
     isPR:        e.isPR        ?? false,
     synced:      false
   };
@@ -1309,6 +1311,7 @@ async function quickDone() {
     dateOnly:    completedDate,
     timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}),
     set:         ex.set,
+    muscleGroup: ex.muscleGroup || '',
     isPR:        isNewPR,
     synced:      false
   };
@@ -1360,6 +1363,7 @@ async function quickLogSet() {
     set:         ex.set,
     setNumber,
     totalSets:   total,
+    muscleGroup: ex.muscleGroup || '',
     isPR:        isNewPR,
     synced:      false
   };
