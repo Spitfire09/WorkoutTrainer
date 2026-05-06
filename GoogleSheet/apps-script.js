@@ -365,8 +365,8 @@ function doPost(e) {
       allData.forEach((row, i) => {
         if (String(row[colCompleted]) === 'yes') {
           const rowNum = i + 2;
-          if (colLastWeight  !== undefined) sheet.getRange(rowNum, colLastWeight  + 1).setValue(row[colTodayWeight] ?? 0);
-          if (colLastReps    !== undefined) sheet.getRange(rowNum, colLastReps    + 1).setValue(row[colTodayReps]   ?? 0);
+          if (colLastWeight  !== undefined && colTodayWeight !== undefined) sheet.getRange(rowNum, colLastWeight  + 1).setValue(row[colTodayWeight]);
+          if (colLastReps    !== undefined && colTodayReps   !== undefined) sheet.getRange(rowNum, colLastReps    + 1).setValue(row[colTodayReps]);
           sheet.getRange(rowNum, colCompleted + 1).setValue('no');
           resetCount++;
         }
