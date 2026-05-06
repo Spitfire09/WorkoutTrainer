@@ -80,20 +80,52 @@ function _getOrCreateSheet(ss, name, headers, headerStyle) {
     const hdrRange = sheet.getRange(1, 1, 1, headers.length);
     hdrRange.setFontWeight('bold').setFrozenRows(1);
     if (headerStyle) headerStyle(hdrRange);
+  } else {
+    // Tilføj manglende kolonner til eksisterende sheets
+    _ensureSheetColumns(sheet, headers);
   }
   return sheet;
 }
 
-/** Returnér alle rækker som array af objekter */
+/** Sikr at alle påkrævede kolonner findes i det eksisterende sheet.
+ *  Manglende kolonner tilføjes i slutningen. */
+function _ensureSheetColumns(sheet, headers) {
+  const lastCol = sheet.getLastColumn();
+  const existing = lastCol >= 1
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim())
+    : [];
+  const existingSet = new Set(existing.filter(Boolean));
+  headers.forEach(h => {
+    if (!existingSet.has(h)) {
+      const newCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, newCol).setValue(h).setFontWeight('bold');
+      existingSet.add(h);
+    }
+  });
+}
+
+/** Returnér alle rækker som array af objekter, baseret på faktiske kolonneoverskrifter */
 function _sheetToObjects(sheet, headers) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  const data = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+
+  // Læs de faktiske kolonneoverskrifter fra række 1 for robust kolonnekortlægning
+  const lastCol = Math.max(sheet.getLastColumn(), headers.length);
+  const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(h => String(h).trim());
+
+  // Byg map: kolonnenavn → 0-baseret indeks
+  const colIndex = {};
+  actualHeaders.forEach((h, i) => { if (h) colIndex[h] = i; });
+
+  const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   return data
     .filter(row => row.some(v => v !== '' && v !== null))
     .map(row => {
       const obj = {};
-      headers.forEach((h, i) => { obj[h] = row[i]; });
+      headers.forEach(h => {
+        obj[h] = colIndex[h] !== undefined ? row[colIndex[h]] : '';
+      });
       return obj;
     });
 }
@@ -230,13 +262,20 @@ function doPost(e) {
       const lastRow = sheet.getLastRow();
       if (lastRow < 2) return _err('Ingen øvelser fundet');
 
+      // Dynamisk kolonnekortlægning baseret på faktiske overskrifter
+      const lastCol = Math.max(sheet.getLastColumn(), 1);
+      const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+        .map(h => String(h).trim());
+      const colMap = {}; // kolonnenavn → 1-baseret kolonnenummer
+      actualHeaders.forEach((h, i) => { if (h) colMap[h] = i + 1; });
+
       const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       for (let i = 0; i < ids.length; i++) {
         if (String(ids[i][0]) === entryId) {
           const rowNum = i + 2;
-          EXERCISE_HEADERS.forEach((h, col) => {
-            if (Object.prototype.hasOwnProperty.call(fields, h)) {
-              sheet.getRange(rowNum, col + 1).setValue(fields[h]);
+          Object.keys(fields).forEach(h => {
+            if (colMap[h]) {
+              sheet.getRange(rowNum, colMap[h]).setValue(fields[h]);
             }
           });
           return _ok({ updated: entryId });
@@ -304,21 +343,31 @@ function doPost(e) {
       if (!sheet || sheet.getLastRow() < 2) return _ok({ reset: 0 });
 
       const lastRow = sheet.getLastRow();
-      const allData = sheet.getRange(2, 1, lastRow - 1, EXERCISE_HEADERS.length).getValues();
 
-      const colCompleted   = EXERCISE_HEADERS.indexOf('Completed');
-      const colLastWeight  = EXERCISE_HEADERS.indexOf('LastWeight');
-      const colTodayWeight = EXERCISE_HEADERS.indexOf('TodayWeight');
-      const colLastReps    = EXERCISE_HEADERS.indexOf('LastReps');
-      const colTodayReps   = EXERCISE_HEADERS.indexOf('TodayReps');
+      // Dynamisk kolonnekortlægning baseret på faktiske overskrifter
+      const lastCol = Math.max(sheet.getLastColumn(), 1);
+      const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+        .map(h => String(h).trim());
+      const colMap = {}; // kolonnenavn → 0-baseret indeks
+      actualHeaders.forEach((h, i) => { if (h) colMap[h] = i; });
+
+      const colCompleted   = colMap['Completed'];
+      const colLastWeight  = colMap['LastWeight'];
+      const colTodayWeight = colMap['TodayWeight'];
+      const colLastReps    = colMap['LastReps'];
+      const colTodayReps   = colMap['TodayReps'];
+
+      if (colCompleted === undefined) return _ok({ reset: 0 });
+
+      const allData = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
       let resetCount = 0;
       allData.forEach((row, i) => {
         if (String(row[colCompleted]) === 'yes') {
           const rowNum = i + 2;
-          sheet.getRange(rowNum, colLastWeight  + 1).setValue(row[colTodayWeight]);
-          sheet.getRange(rowNum, colLastReps    + 1).setValue(row[colTodayReps]);
-          sheet.getRange(rowNum, colCompleted   + 1).setValue('no');
+          if (colLastWeight  !== undefined) sheet.getRange(rowNum, colLastWeight  + 1).setValue(row[colTodayWeight] ?? 0);
+          if (colLastReps    !== undefined) sheet.getRange(rowNum, colLastReps    + 1).setValue(row[colTodayReps]   ?? 0);
+          sheet.getRange(rowNum, colCompleted + 1).setValue('no');
           resetCount++;
         }
       });
@@ -338,17 +387,24 @@ function doPost(e) {
       const ids     = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       const today   = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
+      // Dynamisk kolonnekortlægning baseret på faktiske overskrifter
+      const lastCol = Math.max(sheet.getLastColumn(), 1);
+      const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+        .map(h => String(h).trim());
+      const colMap = {}; // kolonnenavn → 1-baseret kolonnenummer
+      actualHeaders.forEach((h, i) => { if (h) colMap[h] = i + 1; });
+
       for (let i = 0; i < ids.length; i++) {
         if (String(ids[i][0]) === entryId) {
           const rowNum = i + 2;
-          if (data.todayWeight !== undefined) {
-            sheet.getRange(rowNum, EXERCISE_HEADERS.indexOf('TodayWeight') + 1).setValue(data.todayWeight);
+          if (data.todayWeight !== undefined && colMap['TodayWeight']) {
+            sheet.getRange(rowNum, colMap['TodayWeight']).setValue(data.todayWeight);
           }
-          if (data.todayReps !== undefined) {
-            sheet.getRange(rowNum, EXERCISE_HEADERS.indexOf('TodayReps') + 1).setValue(data.todayReps);
+          if (data.todayReps !== undefined && colMap['TodayReps']) {
+            sheet.getRange(rowNum, colMap['TodayReps']).setValue(data.todayReps);
           }
-          sheet.getRange(rowNum, EXERCISE_HEADERS.indexOf('Completed')        + 1).setValue('yes');
-          sheet.getRange(rowNum, EXERCISE_HEADERS.indexOf('LastCompletedDate')+ 1).setValue(today);
+          if (colMap['Completed'])        sheet.getRange(rowNum, colMap['Completed']).setValue('yes');
+          if (colMap['LastCompletedDate']) sheet.getRange(rowNum, colMap['LastCompletedDate']).setValue(today);
           break;
         }
       }

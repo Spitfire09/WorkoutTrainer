@@ -1009,56 +1009,28 @@ async function saveDetails() {
   ex.todayWeight = Number(document.getElementById('det-todayweight').value) || 0;
   ex.todayReps   = Number(document.getElementById('det-todayreps').value)   || 0;
   ex.description = document.getElementById('det-description').value.trim();
-  ex.completed   = 'yes';
-  ex.lastCompletedDate = new Date().toISOString().slice(0, 10);
-
-  // PR check must happen BEFORE adding the new entry to logEntries
-  const isNewPR = checkPR(ex.exercise, ex.todayWeight);
-
-  // Build log entry
-  const logEntry = {
-    entryId:     uid(),
-    date:        new Date().toLocaleString('da-DK'),
-    type:        ex.type,
-    exercise:    ex.exercise,
-    day:         String(ex.day),
-    lastWeight:  ex.lastWeight,
-    todayWeight: ex.todayWeight,
-    lastReps:    ex.lastReps,
-    todayReps:   ex.todayReps,
-    dateOnly:    new Date().toISOString().slice(0, 10),
-    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'}),
-    set:         ex.set,
-    muscleGroup: ex.muscleGroup || '',
-    isPR:        isNewPR,
-    synced:      false
-  };
-  logEntries.unshift(logEntry);
   save();
 
-  // Sync
+  // Sync only the updated metadata fields — do NOT mark as completed
   if (cfg.url) {
     spinner(true);
     try {
       await ensureExerciseSynced(ex);
-      await api({ action: 'markCompleted', entryId: ex.entryId,
-        todayWeight: ex.todayWeight, todayReps: ex.todayReps,
-        fields: { TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
-                  Completed: 'yes', LastCompletedDate: ex.lastCompletedDate,
-                  Exercise: ex.exercise, Type: ex.type, Category: ex.category,
+      await api({ action: 'updateExercise', entryId: ex.entryId,
+        fields: { Exercise: ex.exercise, Type: ex.type, Category: ex.category,
                   MuscleGroup: ex.muscleGroup || '',
-                  Day: ex.day, Set: ex.set, RPE: ex.rpe || '', Description: ex.description },
-        logEntry });
-      ex.synced = true; logEntry.synced = true; save();
+                  Day: ex.day, Set: ex.set, RPE: ex.rpe || '',
+                  TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
+                  LastWeight: ex.lastWeight, LastReps: ex.lastReps,
+                  Description: ex.description } });
+      ex.synced = true; save();
     } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
     spinner(false);
   }
 
-  if (isNewPR) toast('🏆 NY PR! ' + ex.exercise + ' — ' + ex.todayWeight + ' kg!', 3500);
-  else toast('✅ ' + ex.exercise + ' afsluttet!');
+  toast('💾 ' + ex.exercise + ' gemt!');
   showScreen('screen-home');
   renderHome();
-  startRestTimer(cfg.restDuration || 90, () => {});
 }
 
 // ══════════════════════════════════════════════════════════════════
