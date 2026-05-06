@@ -623,6 +623,7 @@
   <p class="timer-title">⏱ Hvil</p>
   <div class="timer-ring">
     <svg viewBox="0 0 180 180">
+      <!-- r="80" must match TIMER_RING_RADIUS in JS -->
       <circle class="timer-ring-bg" cx="90" cy="90" r="80"/>
       <circle class="timer-ring-fg" id="timer-ring-fg" cx="90" cy="90" r="80"
         stroke-dasharray="502.65" stroke-dashoffset="0"/>
@@ -1416,7 +1417,9 @@ function checkPR(exerciseName, weight) {
 let restTimerInterval  = null;
 let restTimerRemaining = 0;
 let restTimerTotal     = 90;
-const RING_CIRCUMFERENCE = 2 * Math.PI * 80; // r = 80 in SVG viewBox
+const TIMER_RING_RADIUS    = 80;
+const RING_CIRCUMFERENCE   = 2 * Math.PI * TIMER_RING_RADIUS;
+const MAX_REST_DURATION    = 600; // seconds
 
 function beep() {
   try {
@@ -1475,7 +1478,7 @@ function skipRestTimer() {
 }
 
 function addRestTime(extraSeconds) {
-  restTimerRemaining = Math.min(restTimerRemaining + extraSeconds, 600);
+  restTimerRemaining = Math.min(restTimerRemaining + extraSeconds, MAX_REST_DURATION);
   restTimerTotal     = Math.max(restTimerTotal, restTimerRemaining);
 }
 
