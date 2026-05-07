@@ -1140,6 +1140,12 @@ function renderLog() {
     (e.type||'').toLowerCase().includes(q) ||
     (e.dateOnly||'').includes(q));
 
+  filtered = filtered.slice().sort((a, b) => {
+    const da = (a.dateOnly || '') + ' ' + (a.timeOnly || '');
+    const db = (b.dateOnly || '') + ' ' + (b.timeOnly || '');
+    return db.localeCompare(da);
+  });
+
   if (!filtered.length) {
     list.innerHTML = '<p class="empty">Ingen log-poster fundet.</p>'; return;
   }
