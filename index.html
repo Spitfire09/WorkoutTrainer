@@ -913,8 +913,9 @@ function showScreen(id) {
   // Show/hide top-bar controls depending on screen
   document.getElementById('btn-newday').style.display  = id === 'screen-home' ? '' : 'none';
   document.getElementById('btn-refresh').style.display = id === 'screen-settings' ? 'none' : '';
-  // Push history entry so Android back button navigates within the app
-  if (id !== 'screen-home') {
+  // Push history entry so Android back button navigates within the app.
+  // Only push if we're not already recording this screen to avoid duplicates.
+  if (id !== 'screen-home' && (!history.state || history.state.screen !== id)) {
     history.pushState({ screen: id }, '');
   }
 }
@@ -1444,7 +1445,8 @@ function openQuickPanel(ex) {
   document.getElementById('qp-reps').value   = ex.todayReps   ?? ex.lastReps   ?? 0;
   updateQPSetUI();
   document.getElementById('quick-panel').classList.add('open');
-  history.pushState({ screen: 'quick-panel' }, '');
+  const fromScreen = document.querySelector('.screen.active')?.id || 'screen-home';
+  history.pushState({ screen: 'quick-panel', returnTo: fromScreen }, '');
 }
 
 function closeQuickPanel() {
@@ -1954,22 +1956,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Android back button (PWA) ──────────────────────────────────
-  // Push an initial history entry so the back button never closes the app.
-  history.pushState({ screen: 'screen-home' }, '');
+  // Replace the initial history entry (no extra push, start clean).
+  history.replaceState({ screen: 'screen-home' }, '');
 
-  window.addEventListener('popstate', () => {
+  window.addEventListener('popstate', (e) => {
     // Priority 1: close rest-timer overlay
     const timerOverlay = document.getElementById('rest-timer-overlay');
     if (timerOverlay.classList.contains('show')) {
       skipRestTimer();
-      history.pushState({ screen: 'modal' }, '');
+      history.pushState({ screen: 'rest-timer' }, '');
       return;
     }
     // Priority 2: close quick panel
     const quickPanel = document.getElementById('quick-panel');
     if (quickPanel.classList.contains('open')) {
       closeQuickPanel();
-      history.pushState({ screen: 'screen-home' }, '');
+      // Restore state for the screen we returned to
+      const active = document.querySelector('.screen.active')?.id || 'screen-home';
+      history.pushState({ screen: active }, '');
       return;
     }
     // Priority 3: go back to home screen
@@ -1978,8 +1982,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showScreen('screen-home');
       renderHome();
     }
-    // Always re-push so there is always a state to pop — prevents app close
-    history.pushState({ screen: 'screen-home' }, '');
+    // Replace (not push) to avoid accumulating duplicate home states
+    history.replaceState({ screen: 'screen-home' }, '');
   });
 </script>
 </body>
