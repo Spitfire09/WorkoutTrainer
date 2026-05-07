@@ -52,19 +52,21 @@
     /* ── Top bar ──────────────────────────────────────────────── */
     #topbar {
       height: var(--hdr);
-      background: linear-gradient(135deg, #1c3a60 0%, #0f2444 50%, #09192e 100%);
-      border-bottom: 1px solid rgba(59,130,246,.18);
+      background: linear-gradient(135deg, #1e3f70 0%, #112b52 40%, #0d1f3c 100%);
+      border-bottom: 2px solid transparent;
+      border-image: linear-gradient(90deg, #3b82f6, #22d3ee, #a78bfa) 1;
       display: flex; align-items: center;
       padding: 0 14px; gap: 10px;
       flex-shrink: 0;
       position: relative;
-      box-shadow: 0 2px 20px rgba(0,0,0,.45);
+      box-shadow: 0 2px 24px rgba(34,211,238,.15), 0 4px 16px rgba(0,0,0,.5);
     }
     #topbar h1 {
-      font-size: 19px; font-weight: 800; flex: 1;
-      background: linear-gradient(90deg, #f1f5f9 30%, #93c5fd 100%);
+      font-size: 20px; font-weight: 800; flex: 1;
+      background: linear-gradient(90deg, #60a5fa 0%, #22d3ee 50%, #a78bfa 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text; letter-spacing: -.02em;
+      filter: drop-shadow(0 0 8px rgba(34,211,238,.35));
     }
     #topbar button {
       background: rgba(255,255,255,.08);
@@ -103,13 +105,16 @@
     }
     #topnav button.active {
       color: var(--accent2);
-      background: rgba(34,211,238,.08);
+      background: rgba(34,211,238,.12);
+      box-shadow: 0 0 12px rgba(34,211,238,.15);
     }
     #topnav button.active::after {
       content: ''; position: absolute; bottom: -6px; left: 50%;
       transform: translateX(-50%);
-      width: 20px; height: 2px;
-      background: var(--accent2); border-radius: 2px;
+      width: 24px; height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #22d3ee);
+      border-radius: 2px;
+      box-shadow: 0 0 6px rgba(34,211,238,.5);
     }
     #topnav button svg { width: 20px; height: 20px; }
 
@@ -145,17 +150,19 @@
       transition: background .15s, border-color .15s, transform .1s;
       position: relative; overflow: hidden;
     }
+    .ex-card { border-left: 3px solid var(--card-accent, var(--border)); }
     .ex-card::before {
       content: ''; position: absolute;
       left: 0; top: 0; bottom: 0; width: 3px;
-      background: var(--accent); border-radius: 3px 0 0 3px;
+      background: var(--card-accent, var(--accent)); border-radius: 3px 0 0 3px;
       opacity: 0; transition: opacity .15s;
     }
     .ex-card:hover { background: var(--surface2); border-color: var(--border2); }
     .ex-card:hover::before { opacity: 1; }
     .ex-card:active { transform: scale(.99); }
-    .ex-card.done { opacity: .5; }
+    .ex-card.done { opacity: .55; }
     .ex-card.done::before { background: var(--success); opacity: 1; }
+    .ex-card.done { border-left-color: var(--success); }
     .ex-card-info { flex: 1; min-width: 0; }
     .ex-card-info h3 {
       font-size: 15px; font-weight: 600; letter-spacing: -.01em;
@@ -430,6 +437,17 @@
       border-radius: 6px; font-size: 11px; font-weight: 600;
       padding: 2px 8px; flex-shrink: 0; white-space: nowrap;
     }
+
+    /* ── Type badge ───────────────────────────────────────────── */
+    .badge-type {
+      border-radius: 6px; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; flex-shrink: 0; white-space: nowrap; letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+    .badge-type-push { background: rgba(59,130,246,.18); color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
+    .badge-type-pull { background: rgba(16,185,129,.18); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    .badge-type-leg  { background: rgba(245,158,11,.18); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+    .badge-type-core { background: rgba(167,139,250,.18); color: #c4b5fd; border: 1px solid rgba(167,139,250,.3); }
 
     /* ── PR badge ─────────────────────────────────────────────── */
     .badge-pr {
@@ -895,6 +913,11 @@ function showScreen(id) {
   // Show/hide top-bar controls depending on screen
   document.getElementById('btn-newday').style.display  = id === 'screen-home' ? '' : 'none';
   document.getElementById('btn-refresh').style.display = id === 'screen-settings' ? 'none' : '';
+  // Push history entry so Android back button navigates within the app.
+  // Only push if we're not already recording this screen to avoid duplicates.
+  if (id !== 'screen-home' && (!history.state || history.state.screen !== id)) {
+    history.pushState({ screen: id }, '');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -971,11 +994,14 @@ function renderHome() {
     const isPrEx = pr > 0 && ex.todayWeight >= pr && ex.completed === 'yes';
     const card = document.createElement('div');
     card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
+    const typeAccent = { Push: '#3b82f6', Pull: '#10b981', Leg: '#f59e0b', Core: '#a78bfa' };
+    card.style.setProperty('--card-accent', typeAccent[ex.type] || '#3b82f6');
     card.innerHTML = `
       <div class="ex-card-info">
         <h3>${esc(ex.exercise)}</h3>
-        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${esc(ex.type)} dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}</p>
+        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; Dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}</p>
       </div>
+      <span class="badge-type badge-type-${esc((ex.type||'').toLowerCase())}">${esc(ex.type)}</span>
       ${isPrEx ? '<span class="badge-pr">🏆 PR</span>' : ''}
       ${ex.completed === 'yes' ? '<span class="badge-done">✓</span>' : ''}
       <span class="ex-card-arrow" role="button" aria-label="Detaljer" tabindex="0">›</span>`;
@@ -1419,6 +1445,8 @@ function openQuickPanel(ex) {
   document.getElementById('qp-reps').value   = ex.todayReps   ?? ex.lastReps   ?? 0;
   updateQPSetUI();
   document.getElementById('quick-panel').classList.add('open');
+  const fromScreen = document.querySelector('.screen.active')?.id || 'screen-home';
+  history.pushState({ screen: 'quick-panel', returnTo: fromScreen }, '');
 }
 
 function closeQuickPanel() {
@@ -1926,7 +1954,37 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
-});
+
+  // ── Android back button (PWA) ──────────────────────────────────
+  // Replace the initial history entry (no extra push, start clean).
+  history.replaceState({ screen: 'screen-home' }, '');
+
+  window.addEventListener('popstate', (e) => {
+    // Priority 1: close rest-timer overlay
+    const timerOverlay = document.getElementById('rest-timer-overlay');
+    if (timerOverlay.classList.contains('show')) {
+      skipRestTimer();
+      history.pushState({ screen: 'rest-timer' }, '');
+      return;
+    }
+    // Priority 2: close quick panel
+    const quickPanel = document.getElementById('quick-panel');
+    if (quickPanel.classList.contains('open')) {
+      closeQuickPanel();
+      // Restore state for the screen we returned to
+      const active = document.querySelector('.screen.active')?.id || 'screen-home';
+      history.pushState({ screen: active }, '');
+      return;
+    }
+    // Priority 3: go back to home screen
+    const active = document.querySelector('.screen.active');
+    if (active && active.id !== 'screen-home') {
+      showScreen('screen-home');
+      renderHome();
+    }
+    // Replace (not push) to avoid accumulating duplicate home states
+    history.replaceState({ screen: 'screen-home' }, '');
+  });
 </script>
 </body>
 </html>
