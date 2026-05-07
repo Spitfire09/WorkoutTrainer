@@ -855,6 +855,7 @@
 const DB_KEY_EXERCISES = 'wt_exercises';
 const DB_KEY_LOG       = 'wt_log';
 const DB_KEY_CFG       = 'wt_config';
+const DB_KEY_REST_TIMER = 'wt_rest_timer';
 
 let exercises  = [];   // Array of exercise objects
 let logEntries = [];   // Array of log entry objects
@@ -1574,10 +1575,6 @@ async function quickLogSet() {
   quickSetLogged.push({ weight: todayWeight, reps: todayReps, setNumber });
   save();
 
-  if (cfg.url) {
-    try { await api({ action: 'logWorkout', entry: logEntry }); logEntry.synced = true; save(); } catch(e) {}
-  }
-
   quickSetCurrent++;
   const isLastSet = quickSetCurrent > total;
 
@@ -1600,6 +1597,10 @@ async function quickLogSet() {
 
   // Start rest timer regardless of whether last set or not
   startRestTimer(cfg.restDuration || 90, () => {});
+
+  if (cfg.url) {
+    try { await api({ action: 'logWorkout', entry: logEntry }); logEntry.synced = true; save(); } catch(e) {}
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1624,6 +1625,7 @@ function checkPR(exerciseName, weight) {
 let restTimerInterval  = null;
 let restTimerRemaining = 0;
 let restTimerTotal     = 90;
+let restTimerEndAt     = 0;
 const TIMER_RING_RADIUS    = 88;
 const RING_CIRCUMFERENCE   = 2 * Math.PI * TIMER_RING_RADIUS;
 const MAX_REST_DURATION    = 600; // seconds
@@ -1644,50 +1646,120 @@ function beep() {
   } catch(e) {}
 }
 
+function saveRestTimerState() {
+  if (!restTimerEndAt) {
+    localStorage.removeItem(DB_KEY_REST_TIMER);
+    return;
+  }
+  localStorage.setItem(DB_KEY_REST_TIMER, JSON.stringify({
+    endAt: restTimerEndAt,
+    total: restTimerTotal
+  }));
+}
+
+function clearRestTimerState() {
+  restTimerEndAt = 0;
+  localStorage.removeItem(DB_KEY_REST_TIMER);
+}
+
+function getRestTimerRemaining(now = Date.now()) {
+  if (!restTimerEndAt) return 0;
+  return Math.max(0, Math.ceil((restTimerEndAt - now) / 1000));
+}
+
+function updateRestTimerUI(remaining = getRestTimerRemaining()) {
+  const ringFg = document.getElementById('timer-ring-fg');
+  const timeEl = document.getElementById('timer-time');
+  const safeTotal = Math.max(restTimerTotal, 1);
+  const clampedRemaining = Math.max(0, remaining);
+  const progress = clampedRemaining / safeTotal;
+
+  timeEl.textContent = clampedRemaining;
+  ringFg.style.strokeDasharray = RING_CIRCUMFERENCE;
+  ringFg.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
+}
+
+function finishRestTimer(onDone, notifyUser = document.visibilityState === 'visible') {
+  clearInterval(restTimerInterval);
+  restTimerInterval = null;
+  restTimerRemaining = 0;
+  clearRestTimerState();
+  updateRestTimerUI(0);
+
+  const overlay = document.getElementById('rest-timer-overlay');
+  if (notifyUser) {
+    beep();
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 400]);
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      if (typeof onDone === 'function') onDone();
+    }, 1200);
+    return;
+  }
+
+  overlay.classList.remove('show');
+  if (typeof onDone === 'function') onDone();
+}
+
+function syncRestTimer(onDone) {
+  if (!restTimerEndAt) return;
+  restTimerRemaining = getRestTimerRemaining();
+  updateRestTimerUI(restTimerRemaining);
+  if (restTimerRemaining <= 0) finishRestTimer(onDone);
+}
+
 function startRestTimer(seconds, onDone) {
   clearInterval(restTimerInterval);
   restTimerTotal     = seconds;
+  restTimerEndAt     = Date.now() + (seconds * 1000);
   restTimerRemaining = seconds;
+  saveRestTimerState();
 
-  const overlay  = document.getElementById('rest-timer-overlay');
-  const ringFg   = document.getElementById('timer-ring-fg');
-  const timeEl   = document.getElementById('timer-time');
-
-  ringFg.style.strokeDasharray  = RING_CIRCUMFERENCE;
-
-  function tick() {
-    timeEl.textContent = restTimerRemaining;
-    const progress = restTimerRemaining / restTimerTotal;
-    ringFg.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
-
-    if (restTimerRemaining <= 0) {
-      clearInterval(restTimerInterval);
-      restTimerInterval = null;
-      beep();
-      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 400]);
-      setTimeout(() => {
-        overlay.classList.remove('show');
-        if (typeof onDone === 'function') onDone();
-      }, 1200);
-      return;
-    }
-    restTimerRemaining--;
-  }
-
-  tick();
-  restTimerInterval = setInterval(tick, 1000);
+  const overlay = document.getElementById('rest-timer-overlay');
   overlay.classList.add('show');
+  syncRestTimer(onDone);
+
+  restTimerInterval = setInterval(() => syncRestTimer(onDone), 1000);
 }
 
 function skipRestTimer() {
   clearInterval(restTimerInterval);
   restTimerInterval = null;
+  restTimerRemaining = 0;
+  clearRestTimerState();
   document.getElementById('rest-timer-overlay').classList.remove('show');
 }
 
 function addRestTime(extraSeconds) {
-  restTimerRemaining = Math.min(restTimerRemaining + extraSeconds, MAX_REST_DURATION);
+  restTimerRemaining = Math.min(getRestTimerRemaining() + extraSeconds, MAX_REST_DURATION);
   restTimerTotal     = Math.max(restTimerTotal, restTimerRemaining);
+  restTimerEndAt     = Date.now() + (restTimerRemaining * 1000);
+  saveRestTimerState();
+  syncRestTimer();
+}
+
+function restoreRestTimer() {
+  let state = null;
+  try { state = JSON.parse(localStorage.getItem(DB_KEY_REST_TIMER) || 'null'); } catch(e) {}
+  if (!state || !state.endAt) return;
+
+  restTimerEndAt = Number(state.endAt) || 0;
+  restTimerTotal = Math.min(Math.max(Number(state.total) || cfg.restDuration || 90, 1), MAX_REST_DURATION);
+
+  if (!restTimerEndAt) {
+    clearRestTimerState();
+    return;
+  }
+
+  if (getRestTimerRemaining() <= 0) {
+    finishRestTimer(null, false);
+    return;
+  }
+
+  document.getElementById('rest-timer-overlay').classList.add('show');
+  syncRestTimer();
+  clearInterval(restTimerInterval);
+  restTimerInterval = setInterval(() => syncRestTimer(), 1000);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1859,6 +1931,7 @@ document.addEventListener('DOMContentLoaded', () => {
   load();
   loadSettings();
   renderHome();
+  restoreRestTimer();
 
   // Top nav
   document.querySelectorAll('#topnav button[data-screen]').forEach(btn => {
@@ -1971,6 +2044,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
+
+  const handleRestTimerResume = () => syncRestTimer();
+  document.addEventListener('visibilitychange', handleRestTimerResume);
+  window.addEventListener('pageshow', handleRestTimerResume);
 
   // ── Android back button (PWA) ──────────────────────────────────
   // Replace the initial history entry (no extra push, start clean).
