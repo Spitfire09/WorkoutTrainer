@@ -1719,7 +1719,7 @@ function startRestTimer(seconds, onDone) {
   overlay.classList.add('show');
   syncRestTimer(onDone);
 
-  restTimerInterval = setInterval(() => syncRestTimer(onDone), 250);
+  restTimerInterval = setInterval(() => syncRestTimer(onDone), 1000);
 }
 
 function skipRestTimer() {
@@ -1759,7 +1759,7 @@ function restoreRestTimer() {
   document.getElementById('rest-timer-overlay').classList.add('show');
   syncRestTimer();
   clearInterval(restTimerInterval);
-  restTimerInterval = setInterval(() => syncRestTimer(), 250);
+  restTimerInterval = setInterval(() => syncRestTimer(), 1000);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2045,9 +2045,9 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  document.addEventListener('visibilitychange', () => syncRestTimer());
-  window.addEventListener('focus', () => syncRestTimer());
-  window.addEventListener('pageshow', () => syncRestTimer());
+  const handleRestTimerResume = () => syncRestTimer();
+  document.addEventListener('visibilitychange', handleRestTimerResume);
+  window.addEventListener('pageshow', handleRestTimerResume);
 
   // ── Android back button (PWA) ──────────────────────────────────
   // Replace the initial history entry (no extra push, start clean).
