@@ -31,11 +31,19 @@ jobs:
             echo "Error: sw.js not found" && exit 1
           fi
           SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TS=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          # Update cache version in sw.js
           sed -i "s/const CACHE = '[^']*'/const CACHE = 'workouttracker-${SHORT_SHA}'/" sw.js
           if ! grep -q "workouttracker-${SHORT_SHA}" sw.js; then
             echo "Error: cache version replacement failed in sw.js" && exit 1
           fi
           echo "Cache version set to: workouttracker-${SHORT_SHA}"
+          # Inject build timestamp into index.html
+          sed -i "s/BUILD_TIMESTAMP/${BUILD_TS}/" index.html
+          if ! grep -q "${BUILD_TS}" index.html; then
+            echo "Error: build timestamp replacement failed in index.html" && exit 1
+          fi
+          echo "Build timestamp set to: ${BUILD_TS}"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
