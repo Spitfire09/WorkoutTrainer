@@ -772,7 +772,7 @@
       4. Herefter tryk <em>Synkronisér</em> for at trække data ned i appen.
     </p>
     <div class="sep"></div>
-    <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v3</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v3 &nbsp;·&nbsp; <span id="build-stamp">BUILD_TIMESTAMP</span></p>
   </div>
 
   <!-- ─── SCREEN: Chart ─────────────────────────────────────────── -->
@@ -1140,11 +1140,10 @@ function renderLog() {
     (e.type||'').toLowerCase().includes(q) ||
     (e.dateOnly||'').includes(q));
 
-  filtered = filtered.slice().sort((a, b) => {
-    const da = (a.dateOnly || '') + ' ' + (a.timeOnly || '');
-    const db = (b.dateOnly || '') + ' ' + (b.timeOnly || '');
-    return db.localeCompare(da);
-  });
+  filtered = filtered
+    .map(e => ({ e, key: (e.dateOnly || deriveDateOnly(e.date) || '') + 'T' + (e.timeOnly || '00:00') }))
+    .sort((a, b) => b.key.localeCompare(a.key))
+    .map(({ e }) => e);
 
   if (!filtered.length) {
     list.innerHTML = '<p class="empty">Ingen log-poster fundet.</p>'; return;
@@ -1315,10 +1314,22 @@ function normalizeExercise(e) {
 
 /** Normalise a log entry that may use PascalCase keys (seed-data.json)
  *  or the internal camelCase keys used by the app. */
+function deriveDateOnly(dateStr) {
+  if (!dateStr) return '';
+  // Already ISO (YYYY-MM-DD or YYYY-MM-DD ...) — fastest path
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.slice(0, 10);
+  // Try native Date parsing (handles Date.toString(), ISO-with-T, RFC 2822, etc.)
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return '';
+}
+
 function normalizeLogEntry(e) {
+  const rawDate  = e.date        || e.Date      || '';
+  const dateOnly = e.dateOnly    || e.DateOnly  || deriveDateOnly(rawDate);
   return {
     entryId:     e.entryId     || e.EntryID  || uid(),
-    date:        e.date        || e.Date      || '',
+    date:        rawDate,
     type:        e.type        || e.Type      || '',
     exercise:    e.exercise    || e.Exercise  || '',
     day:         String(e.day  ?? e.Day       ?? ''),
@@ -1326,7 +1337,7 @@ function normalizeLogEntry(e) {
     todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? 0) || 0,
     lastReps:    Number(e.lastReps    ?? e.LastReps    ?? 0) || 0,
     todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? 0) || 0,
-    dateOnly:    e.dateOnly    || e.DateOnly  || '',
+    dateOnly,
     timeOnly:    e.timeOnly    || e.TimeOnly  || '',
     set:         e.set         ?? e.Set       ?? null,
     setNumber:   e.setNumber   ?? e.SetNumber ?? null,
