@@ -123,10 +123,11 @@ function showScreen(id) {
 // ══════════════════════════════════════════════════════════════════
 //  SMART DAY SUGGESTION
 // ══════════════════════════════════════════════════════════════════
-const BUFFER_DAYS_SET   = new Set(['3', '9']);
-const LOW_PRIORITY_DAYS = new Set(['H', 'h']);
+const BUFFER_DAYS_SET        = new Set(['3', '9']);
+const LOW_PRIORITY_DAYS      = new Set(['H', 'h']);
+const NEVER_LOGGED_STALENESS = 999; // days-since score for exercises that have never been logged
 
-/** Days since the exercise was last logged (0 = today, 999 = never). */
+/** Days since the exercise was last logged (0 = today, NEVER_LOGGED_STALENESS if never). */
 function exStaleness(exerciseName) {
   const todayMs = new Date().setHours(0, 0, 0, 0);
   let latest = null;
@@ -136,7 +137,7 @@ function exStaleness(exerciseName) {
       if (latest === null || d > latest) latest = d;
     }
   }
-  return latest === null ? 999 : (todayMs - latest) / MS_PER_DAY;
+  return latest === null ? NEVER_LOGGED_STALENESS : (todayMs - latest) / MS_PER_DAY;
 }
 
 /**
@@ -161,12 +162,13 @@ function suggestDay() {
 
   const dayScores = allDays.map(day => {
     const dayExs = exercises.filter(e => String(e.day) === day);
+    if (!dayExs.length) return null;
     const avg = dayExs.reduce((s, ex) => s + stalenessCache[ex.exercise], 0) / dayExs.length;
     let multiplier = 1.0;
     if (LOW_PRIORITY_DAYS.has(day))    multiplier = 0.25;
     else if (BUFFER_DAYS_SET.has(day)) multiplier = 0.45;
     return { day, score: avg * multiplier };
-  });
+  }).filter(Boolean);
   dayScores.sort((a, b) => b.score - a.score);
   const primaryDay = dayScores[0].day;
 
@@ -205,10 +207,6 @@ function renderSuggestion() {
       </div>
       ${backupHtml}
     </div>`;
-  el.querySelector('.sugg-btn').addEventListener('click', () => {
-    document.getElementById('sel-day').value = primaryDay;
-    renderHome();
-  });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1498,6 +1496,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sel-day').addEventListener('change',  renderHome);
   document.getElementById('sel-category').addEventListener('change', renderHome);
   document.getElementById('sel-muscle').addEventListener('change', renderHome);
+
+  // Suggestion bar – delegated click (one listener for all renders)
+  document.getElementById('suggestion-bar').addEventListener('click', e => {
+    const btn = e.target.closest('.sugg-btn');
+    if (!btn) return;
+    document.getElementById('sel-day').value = btn.dataset.day;
+    renderHome();
+  });
 
   // Details
   document.getElementById('btn-det-back').addEventListener('click',   () => { showScreen('screen-home'); renderHome(); });
