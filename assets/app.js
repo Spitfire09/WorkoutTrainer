@@ -125,11 +125,13 @@ function showScreen(id) {
 // ══════════════════════════════════════════════════════════════════
 const BUFFER_DAYS_SET        = new Set(['3', '9']);
 const LOW_PRIORITY_DAYS      = new Set(['H', 'h']);
-const NEVER_LOGGED_STALENESS = 999; // days-since score for exercises that have never been logged
+const NEVER_LOGGED_STALENESS = Infinity; // exercises never logged rank as maximally stale
+const LOW_PRIORITY_WEIGHT    = 0.25;     // day H is rarely used
+const BUFFER_DAY_WEIGHT      = 0.45;     // days 3 & 9 are overflow containers
 
 /** Days since the exercise was last logged (0 = today, NEVER_LOGGED_STALENESS if never). */
 function exStaleness(exerciseName) {
-  const todayMs = new Date().setHours(0, 0, 0, 0);
+  const todayMidnightMs = new Date().setHours(0, 0, 0, 0);
   let latest = null;
   for (const e of logEntries) {
     if (e.exercise === exerciseName && e.dateOnly) {
@@ -137,7 +139,7 @@ function exStaleness(exerciseName) {
       if (latest === null || d > latest) latest = d;
     }
   }
-  return latest === null ? NEVER_LOGGED_STALENESS : (todayMs - latest) / MS_PER_DAY;
+  return latest === null ? NEVER_LOGGED_STALENESS : (todayMidnightMs - latest) / MS_PER_DAY;
 }
 
 /**
@@ -165,8 +167,8 @@ function suggestDay() {
     if (!dayExs.length) return null;
     const avg = dayExs.reduce((s, ex) => s + stalenessCache[ex.exercise], 0) / dayExs.length;
     let multiplier = 1.0;
-    if (LOW_PRIORITY_DAYS.has(day))    multiplier = 0.25;
-    else if (BUFFER_DAYS_SET.has(day)) multiplier = 0.45;
+    if (LOW_PRIORITY_DAYS.has(day))    multiplier = LOW_PRIORITY_WEIGHT;
+    else if (BUFFER_DAYS_SET.has(day)) multiplier = BUFFER_DAY_WEIGHT;
     return { day, score: avg * multiplier };
   }).filter(Boolean);
   dayScores.sort((a, b) => b.score - a.score);
@@ -177,7 +179,7 @@ function suggestDay() {
     .map(e => ({ ex: e, staleness: stalenessCache[e.exercise] }))
     .sort((a, b) => b.staleness - a.staleness)
     .slice(0, 3)
-    .filter(({ staleness }) => staleness > 0)
+    .filter(({ staleness }) => staleness > 0) // exclude exercises already logged today
     .map(b => b.ex);
 
   return { primaryDay, backups };
