@@ -508,6 +508,63 @@
     .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
     .chart-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
     .chart-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Stagnation / progression badges ─────────────────────────── */
+    .badge-stagnant {
+      background: rgba(244,63,94,.12); color: var(--danger);
+      border: 1px solid rgba(244,63,94,.25);
+      border-radius: 6px; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; flex-shrink: 0;
+    }
+    .badge-increase {
+      background: rgba(16,185,129,.12); color: var(--success);
+      border: 1px solid rgba(16,185,129,.25);
+      border-radius: 6px; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; flex-shrink: 0;
+    }
+
+    /* ── Quick-panel progression hint ─────────────────────────────── */
+    #qp-hint {
+      background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.25);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      font-size: 13px; color: var(--success); margin-bottom: 10px;
+      display: none; line-height: 1.5;
+    }
+    #qp-hint.show { display: block; }
+
+    /* ── Analyse screen ────────────────────────────────────────────── */
+    .analyse-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+    }
+    .analyse-card-title {
+      font-size: 13px; font-weight: 700; color: var(--text2);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .analyse-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; gap: 8px;
+    }
+    .analyse-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .analyse-row-label { color: var(--text2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .analyse-row-value { color: var(--muted); font-size: 12px; flex-shrink: 0; }
+    .analyse-row-badge { flex-shrink: 0; }
+    .analyse-alert {
+      background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      font-size: 13px; color: var(--warning); margin-bottom: 6px;
+    }
+    .analyse-ok {
+      background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      font-size: 13px; color: var(--success);
+    }
+    .analyse-info {
+      background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      font-size: 13px; color: #93c5fd;
+    }
   </style>
 </head>
 <body>
@@ -533,6 +590,12 @@
       <line x1="16" y1="2" x2="16" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
     Log
+  </button>
+  <button data-screen="screen-analyse" aria-label="Analyse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+    Analyse
   </button>
   <button data-screen="screen-new" aria-label="Ny øvelse">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -655,6 +718,12 @@
       <button class="btn btn-success" id="btn-det-save" style="flex:1">✓ Gem &amp; Afslut</button>
     </div>
     <button class="btn btn-danger btn-full" id="btn-det-delete" style="margin-top:4px">Slet øvelse</button>
+  </div>
+
+  <!-- ─── SCREEN: Analyse ─────────────────────────────────────── -->
+  <div class="screen" id="screen-analyse">
+    <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700">Analyse &amp; Indsigter</p>
+    <div id="analyse-content"><p class="empty">Åbn skærmen for at indlæse analyse.</p></div>
   </div>
 
   <!-- ─── SCREEN: New Exercise ──────────────────────────────── -->
@@ -788,6 +857,8 @@
     <div class="chart-legend">
       <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent2)"></div>Vægt (kg)</div>
       <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#fbbf24"></div>PR</div>
+      <div class="chart-legend-item"><div class="chart-legend-dot" style="background:rgba(245,158,11,.7);border-radius:2px;width:14px;height:3px"></div>Volumen</div>
+      <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent3);border-radius:2px;width:14px;height:3px"></div>Tendens</div>
     </div>
     <p class="section-hdr" style="margin-top:8px">Seneste poster</p>
     <div id="chart-recent-log"></div>
@@ -808,6 +879,7 @@
       <span class="set-progress-label" id="qp-set-label">Sæt 1 af 3</span>
       <div id="qp-set-chips"></div>
     </div>
+    <div id="qp-hint"></div>
     <div class="qp-row">
       <label for="qp-weight">Vægt (kg)</label>
       <input type="number" id="qp-weight" step="0.5" min="0" />
@@ -907,6 +979,7 @@ function showScreen(id) {
     'screen-details':  'Øvelse',
     'screen-new':      'Ny øvelse',
     'screen-log':      'Log',
+    'screen-analyse':  'Analyse',
     'screen-settings': 'Indstillinger',
     'screen-chart':    'Fremgang'
   };
@@ -993,6 +1066,8 @@ function renderHome() {
   sorted.forEach(ex => {
     const pr = getPersonalRecord(ex.exercise);
     const isPrEx = pr > 0 && ex.todayWeight >= pr && ex.completed === 'yes';
+    const stagnant = isStagnant(ex.exercise);
+    const progressHint = getProgressionHint(ex);
     const card = document.createElement('div');
     card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
     const typeAccent = { Push: '#3b82f6', Pull: '#10b981', Leg: '#f59e0b', Core: '#a78bfa' };
@@ -1003,6 +1078,8 @@ function renderHome() {
         <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; Dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}</p>
       </div>
       <span class="badge-type badge-type-${esc((ex.type||'').toLowerCase())}">${esc(ex.type)}</span>
+      ${progressHint !== null ? '<span class="badge-increase">⬆ Øg vægt</span>' : ''}
+      ${stagnant && progressHint === null ? '<span class="badge-stagnant">⏸</span>' : ''}
       ${isPrEx ? '<span class="badge-pr">🏆 PR</span>' : ''}
       ${ex.completed === 'yes' ? '<span class="badge-done">✓</span>' : ''}
       <span class="ex-card-arrow" role="button" aria-label="Detaljer" tabindex="0">›</span>`;
@@ -1033,6 +1110,10 @@ function openDetails(ex) {
   document.getElementById('det-lastreps').value    = ex.lastReps         ?? 0;
   document.getElementById('det-todayreps').value   = ex.todayReps        ?? ex.lastReps ?? 0;
   document.getElementById('det-description').value = ex.description      || '';
+  // Auto-advance target weight when exercise was completed at or above target
+  if (ex.completed === 'yes' && ex.todayWeight > 0 && ex.todayWeight >= (ex.lastWeight ?? 0)) {
+    document.getElementById('det-lastweight').value = ex.todayWeight;
+  }
   showScreen('screen-details');
 }
 
@@ -1462,6 +1543,18 @@ function openQuickPanel(ex) {
   document.getElementById('qp-weight').value = ex.todayWeight ?? ex.lastWeight ?? 0;
   document.getElementById('qp-reps').value   = ex.todayReps   ?? ex.lastReps   ?? 0;
   updateQPSetUI();
+
+  // Show progression hint if applicable
+  const hint = getProgressionHint(ex);
+  const hintEl = document.getElementById('qp-hint');
+  if (hint !== null) {
+    hintEl.textContent = `💡 Mål nået 3 gange i træk — overvej at øge til ${hint} kg næste session`;
+    hintEl.classList.add('show');
+  } else {
+    hintEl.textContent = '';
+    hintEl.classList.remove('show');
+  }
+
   document.getElementById('quick-panel').classList.add('open');
   const fromScreen = document.querySelector('.screen.active')?.id || 'screen-home';
   history.pushState({ screen: 'quick-panel', returnTo: fromScreen }, '');
@@ -1617,6 +1710,67 @@ function getPersonalRecord(exerciseName) {
 function checkPR(exerciseName, weight) {
   if (!weight || weight <= 0) return false;
   return weight > getPersonalRecord(exerciseName);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PROGRESSIVE OVERLOAD HELPERS
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * Returns the suggested next weight (kg) if the user has hit their target
+ * in the last STREAK sessions, or null otherwise.
+ */
+function getProgressionHint(ex) {
+  const STREAK = 3;
+  // Group log entries by date, keep max weight per session
+  const byDate = {};
+  logEntries
+    .filter(e => e.exercise === ex.exercise && e.todayWeight > 0 && e.dateOnly)
+    .forEach(e => {
+      if (!byDate[e.dateOnly] || e.todayWeight > byDate[e.dateOnly].weight) {
+        byDate[e.dateOnly] = { weight: e.todayWeight, reps: e.todayReps || 0 };
+      }
+    });
+  const sessions = Object.entries(byDate)
+    .sort((a, b) => b[0].localeCompare(a[0])) // newest first
+    .slice(0, STREAK);
+  if (sessions.length < STREAK) return null;
+  const allMet = sessions.every(([, s]) =>
+    s.weight >= ex.lastWeight && s.reps >= ex.lastReps
+  );
+  if (!allMet) return null;
+  return +(ex.lastWeight + 2.5).toFixed(1);
+}
+
+/**
+ * Returns true if the exercise has had no new PR in more than 28 days
+ * (requires at least 4 log entries to avoid false positives on new exercises).
+ */
+function isStagnant(exName) {
+  const entries = logEntries.filter(e => e.exercise === exName && e.todayWeight > 0);
+  if (entries.length < 4) return false;
+  const maxWeight = Math.max(...entries.map(e => e.todayWeight));
+  const prEntry = entries
+    .sort((a, b) => b.dateOnly.localeCompare(a.dateOnly))
+    .find(e => e.todayWeight >= maxWeight);
+  if (!prEntry || !prEntry.dateOnly) return false;
+  const days = (Date.now() - new Date(prEntry.dateOnly + 'T00:00:00').getTime()) / 86400000;
+  return days > 28;
+}
+
+/** Simple linear regression — returns { slope, intercept } for y = slope*x + intercept. */
+function linReg(values) {
+  const n = values.length;
+  if (n < 2) return null;
+  const sumX  = values.reduce((s, _, i) => s + i,     0);
+  const sumY  = values.reduce((s, v)    => s + v,     0);
+  const sumXY = values.reduce((s, v, i) => s + i * v, 0);
+  const sumX2 = values.reduce((s, _, i) => s + i * i, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (!denom) return null;
+  const slope     = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1809,6 +1963,19 @@ function renderChart() {
   const diff  = +(lastW - data[0].weight).toFixed(1);
   const diffColor = diff >= 0 ? 'var(--success)' : 'var(--danger)';
 
+  // 1RM estimate (Epley formula: w × (1 + r/30))
+  const best1RM = entries.reduce((best, e) => {
+    if (!e.todayWeight || !e.todayReps) return best;
+    return Math.max(best, e.todayWeight * (1 + e.todayReps / 30));
+  }, 0);
+
+  // Total volume per session (summed across all sets per date)
+  const volByDate = {};
+  entries.forEach(e => {
+    volByDate[e.dateOnly] = (volByDate[e.dateOnly] || 0) + (e.todayWeight || 0) * (e.todayReps || 0);
+  });
+  const lastVol = volByDate[data[data.length - 1].date] || 0;
+
   statsEl.innerHTML = `
     <div class="stat-card">
       <div class="stat-card-label">Bedste (PR)</div>
@@ -1823,8 +1990,16 @@ function renderChart() {
       <div class="stat-card-value" style="color:${diffColor}">${diff >= 0 ? '+' : ''}${diff} kg</div>
     </div>
     <div class="stat-card">
+      <div class="stat-card-label">Est. 1RM</div>
+      <div class="stat-card-value" style="color:var(--accent3)">${best1RM.toFixed(1)} kg</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-card-label">Sessioner</div>
       <div class="stat-card-value">${data.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Volumen (sidst)</div>
+      <div class="stat-card-value" style="font-size:16px">${lastVol.toFixed(0)} kg</div>
     </div>`;
 
   // ── Recent log ─────────────────────────────────────────────────
@@ -1856,8 +2031,13 @@ function renderChart() {
   const minW    = Math.max(0, rawMin - span * 0.2);
   const maxWVal = rawMax + span * 0.2;
 
-  const xPos = i => PAD.left + (n < 2 ? cW / 2 : (i / (n - 1)) * cW);
-  const yPos = w => PAD.top + cH - ((w - minW) / (maxWVal - minW)) * cH;
+  const xPos  = i => PAD.left + (n < 2 ? cW / 2 : (i / (n - 1)) * cW);
+  const yPos  = w => PAD.top + cH - ((w - minW) / (maxWVal - minW)) * cH;
+
+  // Volume normalisation for secondary line (normalised to 10–90 % chart height)
+  const volData  = data.map(d => volByDate[d.date] || 0);
+  const maxVol   = Math.max(...volData, 1);
+  const yVolPos  = v => PAD.top + cH * 0.1 + (1 - v / maxVol) * cH * 0.8;
 
   ctx.clearRect(0, 0, W, H);
 
@@ -1888,7 +2068,30 @@ function renderChart() {
     ctx.lineTo(xPos(n - 1), PAD.top + cH);
     ctx.closePath(); ctx.fill();
 
-    // Line
+    // Volume series (dashed orange line, normalised)
+    ctx.strokeStyle = 'rgba(245,158,11,0.65)'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const y = yVolPos(volData[i]);
+      if (i === 0) ctx.moveTo(xPos(0), y); else ctx.lineTo(xPos(i), y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Trend line (linear regression, purple dashed)
+    const reg = linReg(weights);
+    if (reg) {
+      ctx.strokeStyle = 'rgba(167,139,250,0.7)'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(xPos(0),     yPos(Math.max(minW, reg.intercept)));
+      ctx.lineTo(xPos(n - 1), yPos(Math.max(minW, reg.slope * (n - 1) + reg.intercept)));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Main weight line
     ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
     ctx.beginPath();
     data.forEach((d, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(d.weight)) : ctx.lineTo(xPos(i), yPos(d.weight)));
@@ -1917,6 +2120,169 @@ function renderChart() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  ANALYSE SCREEN
+// ══════════════════════════════════════════════════════════════════
+function renderAnalyse() {
+  const el = document.getElementById('analyse-content');
+  if (!el) return;
+
+  if (!exercises.length) {
+    el.innerHTML = '<p class="empty">Ingen øvelser fundet. Opret øvelser og log træning for at se analyse.</p>';
+    return;
+  }
+
+  let html = '';
+
+  // ── 1. Progressionsoverblik ────────────────────────────────────
+  html += `<div class="analyse-card">
+    <div class="analyse-card-title">📈 Progressionsoverblik</div>`;
+  const exWithLog = exercises.filter(ex =>
+    logEntries.some(e => e.exercise === ex.exercise)
+  );
+  if (!exWithLog.length) {
+    html += `<p class="empty" style="padding:20px 0">Log dine første sæt for at se progression.</p>`;
+  } else {
+    exWithLog.forEach(ex => {
+      const exEntries = logEntries
+        .filter(e => e.exercise === ex.exercise && e.todayWeight > 0)
+        .sort((a, b) => a.dateOnly.localeCompare(b.dateOnly));
+      if (!exEntries.length) return;
+      const maxW  = Math.max(...exEntries.map(e => e.todayWeight));
+      const lastW = exEntries[exEntries.length - 1].todayWeight;
+      const firstW = exEntries[0].todayWeight;
+      const diff  = +(lastW - firstW).toFixed(1);
+      const diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
+      const stagnant = isStagnant(ex.exercise);
+      const hint = getProgressionHint(ex);
+      let badge = '';
+      if (hint !== null) badge = `<span class="badge-increase">⬆ Øg til ${hint} kg</span>`;
+      else if (stagnant)  badge = `<span class="badge-stagnant">⏸ Stagnation</span>`;
+      html += `<div class="analyse-row">
+        <span class="analyse-row-label">${esc(ex.exercise)}</span>
+        <span class="analyse-row-value">${lastW} kg &nbsp;·&nbsp; PR: ${maxW} kg &nbsp;·&nbsp; ${diffStr} kg totalt</span>
+        <span class="analyse-row-badge">${badge}</span>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  // ── 2. Stagnation summary (if any) ────────────────────────────
+  const stagnantList = exercises.filter(ex => isStagnant(ex.exercise));
+  if (stagnantList.length) {
+    html += `<div class="analyse-card">
+      <div class="analyse-card-title">⏸ Stagnerede øvelser <small style="font-weight:400;color:var(--muted)">(ingen PR i &gt;28 dage)</small></div>`;
+    stagnantList.forEach(ex => {
+      html += `<div class="analyse-row">
+        <span class="analyse-row-label">${esc(ex.exercise)}</span>
+        <span class="analyse-row-value">Dag ${esc(String(ex.day))} · ${ex.lastWeight} kg mål</span>
+        <span class="analyse-row-badge"><span class="badge-stagnant">Stagnation</span></span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // ── 3. Volumenbalance pr. dag ──────────────────────────────────
+  html += `<div class="analyse-card">
+    <div class="analyse-card-title">⚖️ Volumenbalance pr. dag</div>`;
+  const byDay = {};
+  exercises.forEach(ex => {
+    const d = String(ex.day || '');
+    if (!d) return;
+    if (!byDay[d]) byDay[d] = { compound: 0, isolation: 0 };
+    if (ex.category === 'Compound') byDay[d].compound++;
+    else byDay[d].isolation++;
+  });
+  const dayKeys = Object.keys(byDay).sort((a, b) => {
+    const na = parseInt(a), nb = parseInt(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+  if (!dayKeys.length) {
+    html += `<p class="empty" style="padding:20px 0">Ingen øvelser med dagsnummer fundet.</p>`;
+  } else {
+    dayKeys.forEach(day => {
+      const { compound, isolation } = byDay[day];
+      const total = compound + isolation;
+      const isolPct = total ? Math.round(isolation / total * 100) : 0;
+      let badge = '';
+      if (compound === 0)  badge = `<span class="badge-stagnant">Ingen compound</span>`;
+      else if (isolPct > 65) badge = `<span style="color:var(--warning);font-size:11px;font-weight:700">⚠ ${isolPct}% iso</span>`;
+      html += `<div class="analyse-row">
+        <span class="analyse-row-label">Dag ${esc(day)}</span>
+        <span class="analyse-row-value">${compound} compound &nbsp;·&nbsp; ${isolation} isolation</span>
+        <span class="analyse-row-badge">${badge}</span>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+
+  // ── 4. Push/Pull balance ───────────────────────────────────────
+  html += `<div class="analyse-card">
+    <div class="analyse-card-title">🔄 Push/Pull balance</div>`;
+  const pushCount = exercises.filter(e => e.type === 'Push').length;
+  const pullCount = exercises.filter(e => e.type === 'Pull').length;
+  if (!(pushCount + pullCount)) {
+    html += `<p class="empty" style="padding:20px 0">Ingen Push/Pull-øvelser fundet.</p>`;
+  } else {
+    const ratio = pushCount / (pullCount || 1);
+    if (ratio > 1.5)
+      html += `<div class="analyse-alert">⚠️ ${pushCount} Push vs ${pullCount} Pull — overvej flere Pull-øvelser for muskelbalance</div>`;
+    else if (ratio < 0.67)
+      html += `<div class="analyse-alert">⚠️ ${pushCount} Push vs ${pullCount} Pull — overvej flere Push-øvelser for muskelbalance</div>`;
+    else
+      html += `<div class="analyse-ok">✅ God balance: ${pushCount} Push / ${pullCount} Pull</div>`;
+    dayKeys.forEach(day => {
+      const dp = exercises.filter(e => String(e.day) === day && e.type === 'Push').length;
+      const dl = exercises.filter(e => String(e.day) === day && e.type === 'Pull').length;
+      if (dp + dl > 0) {
+        html += `<div class="analyse-row">
+          <span class="analyse-row-label">Dag ${esc(day)}</span>
+          <span class="analyse-row-value">${dp} Push &nbsp;·&nbsp; ${dl} Pull</span>
+          <span class="analyse-row-badge"></span>
+        </div>`;
+      }
+    });
+  }
+  html += `</div>`;
+
+  // ── 5. Recovery check ──────────────────────────────────────────
+  html += `<div class="analyse-card">
+    <div class="analyse-card-title">😴 Recovery-advarsler</div>`;
+  const muscleLastDate = {};
+  const recoveryWarnings = [];
+  logEntries
+    .filter(e => e.muscleGroup && e.dateOnly)
+    .sort((a, b) => a.dateOnly.localeCompare(b.dateOnly))
+    .forEach(e => {
+      const mg = e.muscleGroup;
+      const date = new Date(e.dateOnly + 'T00:00:00');
+      if (muscleLastDate[mg]) {
+        const diffH = (date - muscleLastDate[mg]) / 3600000;
+        if (diffH > 0 && diffH < 48) {
+          const key = mg + e.dateOnly;
+          if (!recoveryWarnings.find(w => w.key === key)) {
+            recoveryWarnings.push({ key, muscle: mg, hours: Math.round(diffH), date: e.dateOnly });
+          }
+        }
+      }
+      if (!muscleLastDate[mg] || date > muscleLastDate[mg]) {
+        muscleLastDate[mg] = date;
+      }
+    });
+  const recentRW = recoveryWarnings.slice(-5).reverse();
+  if (!recentRW.length) {
+    html += `<div class="analyse-ok">✅ Ingen Recovery-advarsler fundet i loggen</div>`;
+  } else {
+    recentRW.forEach(w => {
+      html += `<div class="analyse-alert">⚠️ ${esc(w.muscle)}: kun ${w.hours}t hvile (${esc(w.date)})</div>`;
+    });
+  }
+  html += `</div>`;
+
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  UTILITY
 // ══════════════════════════════════════════════════════════════════
 function esc(s) {
@@ -1937,7 +2303,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('#topnav button[data-screen]').forEach(btn => {
     btn.addEventListener('click', () => {
       showScreen(btn.dataset.screen);
-      if (btn.dataset.screen === 'screen-log') renderLog();
+      if (btn.dataset.screen === 'screen-log')     renderLog();
+      if (btn.dataset.screen === 'screen-analyse') renderAnalyse();
     });
   });
 
