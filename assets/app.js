@@ -1,4 +1,6 @@
 'use strict';
+
+const { API_ACTIONS, DEFAULTS } = window.WT_SCHEMA;
 // ══════════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════════
@@ -15,7 +17,7 @@ const STAGNATION_DAYS       = 28;       // days without PR before an exercise is
 
 let exercises  = [];   // Array of exercise objects
 let logEntries = [];   // Array of log entry objects
-let cfg        = { url: '', secret: '', restDuration: 90 };
+let cfg        = { ...DEFAULTS.cfg };
 let currentEx  = null; // Exercise being edited/viewed
 
 // ── Persist ─────────────────────────────────────────────────────
@@ -28,9 +30,9 @@ function load() {
   try { exercises  = JSON.parse(localStorage.getItem(DB_KEY_EXERCISES) || '[]'); } catch(e){}
   try { logEntries = JSON.parse(localStorage.getItem(DB_KEY_LOG)       || '[]'); } catch(e){}
   try { cfg        = JSON.parse(localStorage.getItem(DB_KEY_CFG)       || '{}'); } catch(e){}
-  cfg.url          = cfg.url    || '';
-  cfg.secret       = cfg.secret || '';
-  cfg.restDuration = cfg.restDuration ?? 90;
+  cfg.url          = cfg.url    || DEFAULTS.cfg.url;
+  cfg.secret       = cfg.secret || DEFAULTS.cfg.secret;
+  cfg.restDuration = cfg.restDuration ?? DEFAULTS.cfg.restDuration;
 }
 
 function saveCfg() {
@@ -40,6 +42,46 @@ function saveCfg() {
 function uid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+
+function isoDate(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function sortDayValues(values) {
+  return [...values].sort((a, b) => {
+    const na = parseInt(a), nb = parseInt(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    if (!isNaN(na)) return -1;
+    if (!isNaN(nb)) return 1;
+    return a.localeCompare(b);
+  });
+}
+
+function apiGetUrl(baseUrl, action, secret) {
+  const params = new URLSearchParams({ action, secret });
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate() }) {
+  return {
+    ...DEFAULTS.log,
+    entryId: uid(),
+    date: new Date().toLocaleString('da-DK'),
+    type: ex.type,
+    exercise: ex.exercise,
+    day: String(ex.day),
+    lastWeight: ex.lastWeight,
+    todayWeight,
+    lastReps: ex.lastReps,
+    todayReps,
+    dateOnly,
+    timeOnly: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
+    set: ex.set,
+    setNumber,
+    totalSets,
+    muscleGroup: ex.muscleGroup || ''
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -82,13 +124,7 @@ function showScreen(id) {
 //  RENDER: HOME
 // ══════════════════════════════════════════════════════════════════
 function buildDayOptions() {
-  const days = [...new Set(exercises.map(e => String(e.day)))].sort((a, b) => {
-    const na = parseInt(a), nb = parseInt(b);
-    if (!isNaN(na) && !isNaN(nb)) return na - nb;
-    if (!isNaN(na)) return -1;
-    if (!isNaN(nb)) return  1;
-    return a.localeCompare(b);
-  });
+  const days = sortDayValues(new Set(exercises.map(e => String(e.day))));
   const sel = document.getElementById('sel-day');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Alle dage</option>';
@@ -224,7 +260,7 @@ async function saveDetails() {
     spinner(true);
     try {
       await ensureExerciseSynced(ex);
-      await api({ action: 'updateExercise', entryId: ex.entryId,
+      await api({ action: API_ACTIONS.UPDATE_EXERCISE, entryId: ex.entryId,
         fields: { Exercise: ex.exercise, Type: ex.type, Category: ex.category,
                   MuscleGroup: ex.muscleGroup || '',
                   Day: ex.day, Set: ex.set, RPE: ex.rpe || '',
@@ -251,7 +287,7 @@ async function saveNewExercise() {
   const ex = {
     entryId:           uid(),
     id:                null,
-    date:              new Date().toISOString().slice(0, 10),
+    date:              isoDate(),
     type:              document.getElementById('new-type').value,
     category:          document.getElementById('new-category').value,
     muscleGroup:       document.getElementById('new-musclegroup').value,
@@ -264,7 +300,7 @@ async function saveNewExercise() {
     set:               Number(document.getElementById('new-set').value)    || 3,
     rpe:               Number(document.getElementById('new-rpe').value)    || null,
     completed:         'no',
-    lastCompletedDate: new Date().toISOString().slice(0, 10),
+    lastCompletedDate: isoDate(),
     description:       document.getElementById('new-description').value.trim(),
     synced:            false
   };
@@ -274,7 +310,7 @@ async function saveNewExercise() {
   if (cfg.url) {
     spinner(true);
     try {
-      await api({ action: 'newExercise', exercise: ex });
+      await api({ action: API_ACTIONS.NEW_EXERCISE, exercise: ex });
       ex.synced = true; save();
     } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
     spinner(false);
@@ -340,7 +376,7 @@ async function deleteLog(entryId) {
   logEntries = logEntries.filter(e => e.entryId !== entryId);
   save();
   if (cfg.url) {
-    try { await api({ action: 'deleteLog', entryId }); } catch(e) {}
+    try { await api({ action: API_ACTIONS.DELETE_LOG, entryId }); } catch(e) {}
   }
   renderLog();
   toast('Log-post slettet');
@@ -364,7 +400,7 @@ async function newDay() {
   if (cfg.url) {
     spinner(true);
     try {
-      await api({ action: 'newDay' });
+      await api({ action: API_ACTIONS.NEW_DAY });
       exercises.forEach(e => e.synced = true);
       save();
     } catch(e) { toast('⚠️ Offline – ændringer gemt lokalt'); }
@@ -385,7 +421,7 @@ async function deleteExercise() {
   exercises = exercises.filter(e => e.entryId !== id);
   save();
   if (cfg.url) {
-    try { await api({ action: 'deleteExercise', entryId: id }); } catch(e) {}
+    try { await api({ action: API_ACTIONS.DELETE_EXERCISE, entryId: id }); } catch(e) {}
   }
   toast('Øvelse slettet');
   currentEx = null;
@@ -400,7 +436,7 @@ async function deleteExercise() {
 /** If an exercise has never been synced to Google Sheets, create it now. */
 async function ensureExerciseSynced(ex) {
   if (!ex.synced && cfg.url) {
-    await api({ action: 'newExercise', exercise: ex });
+    await api({ action: API_ACTIONS.NEW_EXERCISE, exercise: ex });
     ex.synced = true;
     save();
   }
@@ -413,13 +449,13 @@ async function syncAll() {
     // Push any locally imported / unsynced items to Google Sheet first
     const unsyncedEx  = exercises.filter(e => !e.synced);
     const unsyncedLog = logEntries.filter(e => !e.synced);
-    if (unsyncedEx.length)  await api({ action: 'importExercises', rows: unsyncedEx });
-    if (unsyncedLog.length) await api({ action: 'importLog',       rows: unsyncedLog });
+    if (unsyncedEx.length)  await api({ action: API_ACTIONS.IMPORT_EXERCISES, rows: unsyncedEx });
+    if (unsyncedLog.length) await api({ action: API_ACTIONS.IMPORT_LOG,       rows: unsyncedLog });
 
     // Then fetch the authoritative data from Google Sheet
     const [exRes, logRes] = await Promise.all([
-      apiFetch(cfg.url + '?action=listExercises&secret=' + encodeURIComponent(cfg.secret)),
-      apiFetch(cfg.url + '?action=listLog&secret='       + encodeURIComponent(cfg.secret))
+      apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_EXERCISES, cfg.secret)),
+      apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_LOG, cfg.secret))
     ]);
     if (exRes.status === 'ok')  { exercises  = exRes.exercises  || []; }
     if (logRes.status === 'ok') { logEntries = logRes.entries   || []; }
@@ -457,23 +493,24 @@ async function api(body) {
  *  or the internal camelCase keys used by the app. */
 function normalizeExercise(e) {
   return {
+    ...DEFAULTS.exercise,
     entryId:           e.entryId           || e.EntryID         || uid(),
-    id:                e.id                ?? e.ID              ?? null,
-    date:              e.date              || e.Date             || '',
-    type:              e.type              || e.Type             || '',
-    category:          e.category          || e.Category         || '',
-    muscleGroup:       e.muscleGroup       || e.MuscleGroup      || '',
-    day:               String(e.day        ?? e.Day              ?? ''),
-    exercise:          e.exercise          || e.Exercise         || '',
-    lastWeight:        Number(e.lastWeight  ?? e.LastWeight       ?? 0) || 0,
-    todayWeight:       Number(e.todayWeight ?? e.TodayWeight      ?? 0) || 0,
-    lastReps:          Number(e.lastReps    ?? e.LastReps         ?? 0) || 0,
-    todayReps:         Number(e.todayReps   ?? e.TodayReps        ?? 0) || 0,
-    set:               Number(e.set         ?? e.Set              ?? 3) || 3,
-    completed:         e.completed         || e.Completed        || 'no',
-    lastCompletedDate: e.lastCompletedDate || e.LastCompletedDate || '',
-    description:       e.description       || e.Description      || '',
-    rpe:               e.rpe               ?? e.RPE              ?? null,
+    id:                e.id                ?? e.ID              ?? DEFAULTS.exercise.id,
+    date:              e.date              || e.Date             || DEFAULTS.exercise.date,
+    type:              e.type              || e.Type             || DEFAULTS.exercise.type,
+    category:          e.category          || e.Category         || DEFAULTS.exercise.category,
+    muscleGroup:       e.muscleGroup       || e.MuscleGroup      || DEFAULTS.exercise.muscleGroup,
+    day:               String(e.day        ?? e.Day              ?? DEFAULTS.exercise.day),
+    exercise:          e.exercise          || e.Exercise         || DEFAULTS.exercise.exercise,
+    lastWeight:        Number(e.lastWeight  ?? e.LastWeight       ?? DEFAULTS.exercise.lastWeight) || 0,
+    todayWeight:       Number(e.todayWeight ?? e.TodayWeight      ?? DEFAULTS.exercise.todayWeight) || 0,
+    lastReps:          Number(e.lastReps    ?? e.LastReps         ?? DEFAULTS.exercise.lastReps) || 0,
+    todayReps:         Number(e.todayReps   ?? e.TodayReps        ?? DEFAULTS.exercise.todayReps) || 0,
+    set:               Number(e.set         ?? e.Set              ?? DEFAULTS.exercise.set) || DEFAULTS.exercise.set,
+    completed:         e.completed         || e.Completed        || DEFAULTS.exercise.completed,
+    lastCompletedDate: e.lastCompletedDate || e.LastCompletedDate || DEFAULTS.exercise.lastCompletedDate,
+    description:       e.description       || e.Description      || DEFAULTS.exercise.description,
+    rpe:               e.rpe               ?? e.RPE              ?? DEFAULTS.exercise.rpe,
     synced:            false
   };
 }
@@ -494,22 +531,23 @@ function normalizeLogEntry(e) {
   const rawDate  = e.date        || e.Date      || '';
   const dateOnly = e.dateOnly    || e.DateOnly  || deriveDateOnly(rawDate);
   return {
+    ...DEFAULTS.log,
     entryId:     e.entryId     || e.EntryID  || uid(),
     date:        rawDate,
-    type:        e.type        || e.Type      || '',
-    exercise:    e.exercise    || e.Exercise  || '',
-    day:         String(e.day  ?? e.Day       ?? ''),
-    lastWeight:  Number(e.lastWeight  ?? e.LastWeight  ?? 0) || 0,
-    todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? 0) || 0,
-    lastReps:    Number(e.lastReps    ?? e.LastReps    ?? 0) || 0,
-    todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? 0) || 0,
+    type:        e.type        || e.Type      || DEFAULTS.log.type,
+    exercise:    e.exercise    || e.Exercise  || DEFAULTS.log.exercise,
+    day:         String(e.day  ?? e.Day       ?? DEFAULTS.log.day),
+    lastWeight:  Number(e.lastWeight  ?? e.LastWeight  ?? DEFAULTS.log.lastWeight) || 0,
+    todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? DEFAULTS.log.todayWeight) || 0,
+    lastReps:    Number(e.lastReps    ?? e.LastReps    ?? DEFAULTS.log.lastReps) || 0,
+    todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? DEFAULTS.log.todayReps) || 0,
     dateOnly,
-    timeOnly:    e.timeOnly    || e.TimeOnly  || '',
-    set:         e.set         ?? e.Set       ?? null,
-    setNumber:   e.setNumber   ?? e.SetNumber ?? null,
-    totalSets:   e.totalSets   ?? null,
-    muscleGroup: e.muscleGroup || e.MuscleGroup || '',
-    isPR:        e.isPR        ?? false,
+    timeOnly:    e.timeOnly    || e.TimeOnly  || DEFAULTS.log.timeOnly,
+    set:         e.set         ?? e.Set       ?? DEFAULTS.log.set,
+    setNumber:   e.setNumber   ?? e.SetNumber ?? DEFAULTS.log.setNumber,
+    totalSets:   e.totalSets   ?? DEFAULTS.log.totalSets,
+    muscleGroup: e.muscleGroup || e.MuscleGroup || DEFAULTS.log.muscleGroup,
+    isPR:        e.isPR        ?? DEFAULTS.log.isPR,
     synced:      false
   };
 }
@@ -598,7 +636,7 @@ async function testConnection() {
     if (!ping || ping.status !== 'ok') throw new Error('Uventet svar fra server');
 
     // Step 2: verify secret by listing exercises
-    const check = await apiFetch(url + '?action=listExercises&secret=' + encodeURIComponent(secret));
+    const check = await apiFetch(apiGetUrl(url, API_ACTIONS.LIST_EXERCISES, secret));
     if (check.status === 'error') {
       el.className = 'err';
       el.textContent = '⚠️ Forbundet, men nøgle er forkert: ' + check.message;
@@ -670,7 +708,7 @@ async function quickDone() {
   // consistent even when offline. A failed sync only shows a warning toast.
   const todayWeight   = Number(document.getElementById('qp-weight').value) || 0;
   const todayReps     = Number(document.getElementById('qp-reps').value)   || 0;
-  const completedDate = new Date().toISOString().slice(0, 10);
+  const completedDate = isoDate();
 
   // PR check must happen BEFORE adding the new log entry
   const isNewPR = checkPR(ex.exercise, todayWeight);
@@ -681,21 +719,8 @@ async function quickDone() {
   ex.lastCompletedDate = completedDate;
 
   const logEntry = {
-    entryId:     uid(),
-    date:        new Date().toLocaleString('da-DK'),
-    type:        ex.type,
-    exercise:    ex.exercise,
-    day:         String(ex.day),
-    lastWeight:  ex.lastWeight,
-    todayWeight,
-    lastReps:    ex.lastReps,
-    todayReps,
-    dateOnly:    completedDate,
-    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit', minute:'2-digit'}),
-    set:         ex.set,
-    muscleGroup: ex.muscleGroup || '',
-    isPR:        isNewPR,
-    synced:      false
+    ...createLogEntry(ex, { todayWeight, todayReps, dateOnly: completedDate }),
+    isPR: isNewPR
   };
   logEntries.unshift(logEntry);
   save();
@@ -704,7 +729,7 @@ async function quickDone() {
     spinner(true);
     try {
       await ensureExerciseSynced(ex);
-      await api({ action: 'markCompleted', entryId: ex.entryId,
+      await api({ action: API_ACTIONS.MARK_COMPLETED, entryId: ex.entryId,
         todayWeight, todayReps, logEntry });
       ex.synced = true; logEntry.synced = true; save();
     } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
@@ -730,23 +755,8 @@ async function quickLogSet() {
   const isNewPR = checkPR(ex.exercise, todayWeight);
 
   const logEntry = {
-    entryId:     uid(),
-    date:        new Date().toLocaleString('da-DK'),
-    type:        ex.type,
-    exercise:    ex.exercise,
-    day:         String(ex.day),
-    lastWeight:  ex.lastWeight,
-    todayWeight,
-    lastReps:    ex.lastReps,
-    todayReps,
-    dateOnly:    new Date().toISOString().slice(0, 10),
-    timeOnly:    new Date().toLocaleTimeString('da-DK', {hour:'2-digit',minute:'2-digit'}),
-    set:         ex.set,
-    setNumber,
-    totalSets:   total,
-    muscleGroup: ex.muscleGroup || '',
-    isPR:        isNewPR,
-    synced:      false
+    ...createLogEntry(ex, { todayWeight, todayReps, setNumber, totalSets: total }),
+    isPR: isNewPR
   };
   logEntries.unshift(logEntry);
   quickSetLogged.push({ weight: todayWeight, reps: todayReps, setNumber });
@@ -760,7 +770,7 @@ async function quickLogSet() {
     ex.todayWeight = todayWeight;
     ex.todayReps   = todayReps;
     ex.completed   = 'yes';
-    ex.lastCompletedDate = new Date().toISOString().slice(0, 10);
+    ex.lastCompletedDate = isoDate();
     save();
     closeQuickPanel();
     renderHome();
@@ -776,7 +786,7 @@ async function quickLogSet() {
   startRestTimer(cfg.restDuration || 90, () => {});
 
   if (cfg.url) {
-    try { await api({ action: 'logWorkout', entry: logEntry }); logEntry.synced = true; save(); } catch(e) {}
+    try { await api({ action: API_ACTIONS.LOG_WORKOUT, entry: logEntry }); logEntry.synced = true; save(); } catch(e) {}
   }
 }
 
@@ -1275,11 +1285,7 @@ function renderAnalyse() {
     if (ex.category === 'Compound') byDay[d].compound++;
     else byDay[d].isolation++;
   });
-  const dayKeys = Object.keys(byDay).sort((a, b) => {
-    const na = parseInt(a), nb = parseInt(b);
-    if (!isNaN(na) && !isNaN(nb)) return na - nb;
-    return a.localeCompare(b);
-  });
+  const dayKeys = sortDayValues(Object.keys(byDay));
   if (!dayKeys.length) {
     html += `<p class="empty" style="padding:20px 0">Ingen øvelser med dagsnummer fundet.</p>`;
   } else {

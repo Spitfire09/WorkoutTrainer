@@ -2,6 +2,9 @@ const CACHE = 'workouttracker-v6';
 const ASSETS = [
   './',
   './index.html',
+  './assets/styles.css',
+  './assets/schema.js',
+  './assets/app.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
