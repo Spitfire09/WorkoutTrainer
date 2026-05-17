@@ -121,6 +121,97 @@ function showScreen(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  SMART DAY SUGGESTION
+// ══════════════════════════════════════════════════════════════════
+const BUFFER_DAYS_SET   = new Set(['3', '9']);
+const LOW_PRIORITY_DAYS = new Set(['H', 'h']);
+
+/** Days since the exercise was last logged (0 = today, 999 = never). */
+function exStaleness(exerciseName) {
+  const todayMs = new Date().setHours(0, 0, 0, 0);
+  let latest = null;
+  for (const e of logEntries) {
+    if (e.exercise === exerciseName && e.dateOnly) {
+      const d = new Date(e.dateOnly + 'T00:00:00').getTime();
+      if (latest === null || d > latest) latest = d;
+    }
+  }
+  return latest === null ? 999 : (todayMs - latest) / MS_PER_DAY;
+}
+
+/**
+ * Scores every day based on how long overdue its exercises are, with
+ * reduced weight for buffer days (3, 9) and low-priority days (H).
+ * Returns { primaryDay, backups } or null when no exercises exist.
+ *   primaryDay – day string of the top-scoring day
+ *   backups    – up to 3 exercise objects from other days, most stale first
+ */
+function suggestDay() {
+  if (!exercises.length) return null;
+  const allDays = [...new Set(exercises.map(e => String(e.day)).filter(Boolean))];
+  if (!allDays.length) return null;
+
+  // Build a staleness cache to avoid re-scanning logEntries repeatedly
+  const stalenessCache = {};
+  exercises.forEach(ex => {
+    if (!(ex.exercise in stalenessCache)) {
+      stalenessCache[ex.exercise] = exStaleness(ex.exercise);
+    }
+  });
+
+  const dayScores = allDays.map(day => {
+    const dayExs = exercises.filter(e => String(e.day) === day);
+    const avg = dayExs.reduce((s, ex) => s + stalenessCache[ex.exercise], 0) / dayExs.length;
+    let multiplier = 1.0;
+    if (LOW_PRIORITY_DAYS.has(day))    multiplier = 0.25;
+    else if (BUFFER_DAYS_SET.has(day)) multiplier = 0.45;
+    return { day, score: avg * multiplier };
+  });
+  dayScores.sort((a, b) => b.score - a.score);
+  const primaryDay = dayScores[0].day;
+
+  const backups = exercises
+    .filter(e => String(e.day) !== primaryDay)
+    .map(e => ({ ex: e, staleness: stalenessCache[e.exercise] }))
+    .sort((a, b) => b.staleness - a.staleness)
+    .slice(0, 3)
+    .filter(({ staleness }) => staleness > 0)
+    .map(b => b.ex);
+
+  return { primaryDay, backups };
+}
+
+function renderSuggestion() {
+  const el = document.getElementById('suggestion-bar');
+  if (!el) return;
+  const sugg = suggestDay();
+  if (!sugg) { el.innerHTML = ''; return; }
+  const { primaryDay, backups } = sugg;
+
+  let backupHtml = '';
+  if (backups.length) {
+    const items = backups.map(ex =>
+      `<span class="sugg-backup-item">${esc(ex.exercise)}<span class="sugg-backup-day">Dag ${esc(String(ex.day))}</span></span>`
+    ).join('');
+    backupHtml = `<div class="sugg-backups">Ekstra øvelser: ${items}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="sugg-card">
+      <div class="sugg-main">
+        <span class="sugg-icon">💡</span>
+        <span class="sugg-text">Foreslået dag: <strong>Dag ${esc(primaryDay)}</strong></span>
+        <button class="sugg-btn" data-day="${esc(primaryDay)}">Vælg ›</button>
+      </div>
+      ${backupHtml}
+    </div>`;
+  el.querySelector('.sugg-btn').addEventListener('click', () => {
+    document.getElementById('sel-day').value = primaryDay;
+    renderHome();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  RENDER: HOME
 // ══════════════════════════════════════════════════════════════════
 function buildDayOptions() {
@@ -152,6 +243,7 @@ function buildMuscleOptions() {
 function renderHome() {
   buildDayOptions();
   buildMuscleOptions();
+  renderSuggestion();
   const typeFilter     = document.getElementById('sel-type').value;
   const dayFilter      = document.getElementById('sel-day').value;
   const categoryFilter = document.getElementById('sel-category').value;
