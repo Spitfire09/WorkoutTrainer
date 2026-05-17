@@ -929,6 +929,12 @@ const DB_KEY_LOG       = 'wt_log';
 const DB_KEY_CFG       = 'wt_config';
 const DB_KEY_REST_TIMER = 'wt_rest_timer';
 
+const MS_PER_DAY          = 86400000;   // milliseconds in one day
+const MS_PER_HOUR         = 3600000;    // milliseconds in one hour
+const PROGRESSION_INCREMENT = 2.5;      // kg to suggest adding when progression criteria met
+const PROGRESSION_STREAK    = 3;        // consecutive sessions needed to trigger hint
+const STAGNATION_DAYS       = 28;       // days without PR before an exercise is "stagnant"
+
 let exercises  = [];   // Array of exercise objects
 let logEntries = [];   // Array of log entry objects
 let cfg        = { url: '', secret: '', restDuration: 90 };
@@ -1721,7 +1727,6 @@ function checkPR(exerciseName, weight) {
  * in the last STREAK sessions, or null otherwise.
  */
 function getProgressionHint(ex) {
-  const STREAK = 3;
   // Group log entries by date, keep max weight per session
   const byDate = {};
   logEntries
@@ -1733,13 +1738,13 @@ function getProgressionHint(ex) {
     });
   const sessions = Object.entries(byDate)
     .sort((a, b) => b[0].localeCompare(a[0])) // newest first
-    .slice(0, STREAK);
-  if (sessions.length < STREAK) return null;
+    .slice(0, PROGRESSION_STREAK);
+  if (sessions.length < PROGRESSION_STREAK) return null;
   const allMet = sessions.every(([, s]) =>
     s.weight >= ex.lastWeight && s.reps >= ex.lastReps
   );
   if (!allMet) return null;
-  return +(ex.lastWeight + 2.5).toFixed(1);
+  return +(ex.lastWeight + PROGRESSION_INCREMENT).toFixed(1);
 }
 
 /**
@@ -1754,8 +1759,8 @@ function isStagnant(exName) {
     .sort((a, b) => b.dateOnly.localeCompare(a.dateOnly))
     .find(e => e.todayWeight >= maxWeight);
   if (!prEntry || !prEntry.dateOnly) return false;
-  const days = (Date.now() - new Date(prEntry.dateOnly + 'T00:00:00').getTime()) / 86400000;
-  return days > 28;
+  const days = (Date.now() - new Date(prEntry.dateOnly + 'T00:00:00').getTime()) / MS_PER_DAY;
+  return days > STAGNATION_DAYS;
 }
 
 /** Simple linear regression — returns { slope, intercept } for y = slope*x + intercept. */
@@ -2257,7 +2262,7 @@ function renderAnalyse() {
       const mg = e.muscleGroup;
       const date = new Date(e.dateOnly + 'T00:00:00');
       if (muscleLastDate[mg]) {
-        const diffH = (date - muscleLastDate[mg]) / 3600000;
+        const diffH = (date - muscleLastDate[mg]) / MS_PER_HOUR;
         if (diffH > 0 && diffH < 48) {
           const key = mg + e.dateOnly;
           if (!recoveryWarnings.find(w => w.key === key)) {
