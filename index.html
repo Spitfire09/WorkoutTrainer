@@ -269,6 +269,24 @@
     /* ── Settings form ────────────────────────────────────────── */
     .settings-note { font-size: 12px; color: var(--muted); line-height: 1.65; }
 
+    /* ── Changelog ────────────────────────────────────────────── */
+    .changelog-entry {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 7px;
+    }
+    .changelog-entry-header {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px;
+    }
+    .changelog-version {
+      font-size: 13px; font-weight: 700; color: var(--accent2);
+    }
+    .changelog-date {
+      font-size: 11px; color: var(--muted);
+    }
+    .changelog-desc {
+      font-size: 12px; color: var(--text2); line-height: 1.55;
+    }
+
     /* ── Empty state ──────────────────────────────────────────── */
     .empty { text-align: center; color: var(--muted); padding: 50px 20px; font-size: 14px; font-weight: 500; }
 
@@ -841,7 +859,9 @@
       4. Herefter tryk <em>Synkronisér</em> for at trække data ned i appen.
     </p>
     <div class="sep"></div>
-    <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v3 &nbsp;·&nbsp; <span id="build-stamp">BUILD_TIMESTAMP</span></p>
+    <p class="section-hdr" style="font-size:16px;color:var(--text);text-transform:none;font-weight:700;margin-top:8px">📋 Versionshistorik</p>
+    <div id="changelog-list"></div>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">WorkoutTracker PWA v1.7.0 &nbsp;·&nbsp; <span id="build-stamp">BUILD_TIMESTAMP</span></p>
   </div>
 
   <!-- ─── SCREEN: Chart ─────────────────────────────────────────── -->
@@ -928,6 +948,18 @@ const DB_KEY_EXERCISES = 'wt_exercises';
 const DB_KEY_LOG       = 'wt_log';
 const DB_KEY_CFG       = 'wt_config';
 const DB_KEY_REST_TIMER = 'wt_rest_timer';
+
+// ── Version history (full list; only the 5 most recent are shown in the app) ─
+const CHANGELOG = [
+  { version: '1.7.0', description: 'Compound-øvelser sorteres nu først i dagtræningslisten. Fuld versionshistorik i CHANGELOG.json; de 5 seneste versioner vises under Indstillinger.', date: '2026-05-17', timestamp: '2026-05-17T14:58:21Z' },
+  { version: '1.6.0', description: 'Pause-timer gendannes ved app-genåbning. Service Worker cache opgraderet til v6.', date: '2026-04-20', timestamp: '2026-04-20T10:00:00Z' },
+  { version: '1.5.0', description: 'Analyse-skærm: Recovery-advarsler, Push/Pull-balance og Volumenbalance pr. dag tilføjet.', date: '2026-03-15', timestamp: '2026-03-15T09:00:00Z' },
+  { version: '1.4.0', description: 'Progressionsdiagram med lineær regression og volumen-kurve. 1RM-estimat (Epley).', date: '2026-02-28', timestamp: '2026-02-28T08:00:00Z' },
+  { version: '1.3.0', description: 'Sæt-for-sæt logging via hurtig-panel. Automatisk progressionshint efter 3 succesfyldte sessioner.', date: '2026-02-10', timestamp: '2026-02-10T12:00:00Z' },
+  { version: '1.2.0', description: 'Google Sheet synkronisering via Apps Script. Import af øvelser og log fra JSON-fil.', date: '2026-01-25', timestamp: '2026-01-25T11:00:00Z' },
+  { version: '1.1.0', description: 'PWA offline-support via Service Worker. Manifest og app-ikoner tilføjet.', date: '2026-01-10', timestamp: '2026-01-10T10:00:00Z' },
+  { version: '1.0.0', description: 'Første udgave: træningsliste, log, detaljevisning og simpel filtrering.', date: '2026-01-02', timestamp: '2026-01-02T08:00:00Z' }
+];
 
 const MS_PER_DAY          = 86400000;   // milliseconds in one day
 const MS_PER_HOUR         = 3600000;    // milliseconds in one hour
@@ -1063,9 +1095,12 @@ function renderHome() {
     list.innerHTML = '<p class="empty">Ingen øvelser matcher filtret.</p>'; return;
   }
 
-  // Sort: not-done first, then alphabetically
+  // Sort: not-done first, then compound before isolation, then alphabetically
   const sorted = [...filtered].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed === 'yes' ? 1 : -1;
+    const aIsCompound = (a.category || '').toLowerCase() === 'compound' ? 0 : 1;
+    const bIsCompound = (b.category || '').toLowerCase() === 'compound' ? 0 : 1;
+    if (aIsCompound !== bIsCompound) return aIsCompound - bIsCompound;
     return a.exercise.localeCompare(b.exercise);
   });
 
@@ -1495,6 +1530,20 @@ function loadSettings() {
   document.getElementById('cfg-url').value          = cfg.url          || '';
   document.getElementById('cfg-secret').value       = cfg.secret       || '';
   document.getElementById('cfg-rest-duration').value = cfg.restDuration ?? 90;
+}
+
+function renderChangelog() {
+  const el = document.getElementById('changelog-list');
+  if (!el) return;
+  const recent = CHANGELOG.slice(0, 5);
+  el.innerHTML = recent.map(v => `
+    <div class="changelog-entry">
+      <div class="changelog-entry-header">
+        <span class="changelog-version">v${esc(v.version)}</span>
+        <span class="changelog-date">${esc(v.date)}</span>
+      </div>
+      <div class="changelog-desc">${esc(v.description)}</div>
+    </div>`).join('');
 }
 
 function exportJson() {
@@ -2301,6 +2350,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   load();
   loadSettings();
+  renderChangelog();
   renderHome();
   restoreRestTimer();
 
