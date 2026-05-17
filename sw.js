@@ -1,7 +1,10 @@
-const CACHE = 'workouttracker-v7';
+const CACHE = 'workouttracker-v8';
 const ASSETS = [
   './',
   './index.html',
+  './assets/styles.css',
+  './assets/schema.js',
+  './assets/app.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',

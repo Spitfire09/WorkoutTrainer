@@ -50,6 +50,30 @@ const LOG_HEADERS = [
   'DateOnly', 'TimeOnly', 'Set', 'SetNumber', 'MuscleGroup'
 ];
 
+
+const ACTIONS = {
+  LIST_EXERCISES: 'listExercises',
+  LIST_LOG: 'listLog',
+  UPDATE_EXERCISE: 'updateExercise',
+  NEW_EXERCISE: 'newExercise',
+  DELETE_EXERCISE: 'deleteExercise',
+  NEW_DAY: 'newDay',
+  MARK_COMPLETED: 'markCompleted',
+  LOG_WORKOUT: 'logWorkout',
+  DELETE_LOG: 'deleteLog',
+  IMPORT_EXERCISES: 'importExercises',
+  IMPORT_LOG: 'importLog'
+};
+
+const EXERCISE_COLS = {
+  COMPLETED: 'Completed',
+  LAST_WEIGHT: 'LastWeight',
+  TODAY_WEIGHT: 'TodayWeight',
+  LAST_REPS: 'LastReps',
+  TODAY_REPS: 'TodayReps',
+  LAST_COMPLETED_DATE: 'LastCompletedDate'
+};
+
 // ════════════════════════════════════════════════════════════════
 //  CORS-hjælper
 // ════════════════════════════════════════════════════════════════
@@ -164,7 +188,7 @@ function doGet(e) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     // ── list exercises ───────────────────────────────────────────
-    if (action === 'listExercises') {
+    if (action === ACTIONS.LIST_EXERCISES) {
       const sheet = ss.getSheetByName(SHEET_EXERCISES);
       if (!sheet) return _ok({ exercises: [] });
       const rows = _sheetToObjects(sheet, EXERCISE_HEADERS);
@@ -192,7 +216,7 @@ function doGet(e) {
     }
 
     // ── list log ─────────────────────────────────────────────────
-    if (action === 'listLog') {
+    if (action === ACTIONS.LIST_LOG) {
       const sheet = ss.getSheetByName(SHEET_LOG);
       if (!sheet) return _ok({ entries: [] });
       const rows = _sheetToObjects(sheet, LOG_HEADERS);
@@ -251,7 +275,7 @@ function doPost(e) {
     // ── updateExercise ───────────────────────────────────────────
     // Opdatér ét felt (typisk TodayWeight, TodayReps, Completed)
     // body: { action, secret, entryId, fields: { TodayWeight, TodayReps, Completed, ... } }
-    if (data.action === 'updateExercise') {
+    if (data.action === ACTIONS.UPDATE_EXERCISE) {
       const sheet = _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
         r => r.setBackground('#1a2a38').setFontColor('#4ec9f7'));
 
@@ -287,7 +311,7 @@ function doPost(e) {
     // ── newExercise ──────────────────────────────────────────────
     // Opret ny øvelse
     // body: { action, secret, exercise: { Type, Category, Day, Exercise, ... } }
-    if (data.action === 'newExercise') {
+    if (data.action === ACTIONS.NEW_EXERCISE) {
       const sheet = _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
         r => r.setBackground('#1a2a38').setFontColor('#4ec9f7'));
 
@@ -319,7 +343,7 @@ function doPost(e) {
     }
 
     // ── deleteExercise ───────────────────────────────────────────
-    if (data.action === 'deleteExercise') {
+    if (data.action === ACTIONS.DELETE_EXERCISE) {
       const sheet   = ss.getSheetByName(SHEET_EXERCISES);
       const entryId = String(data.entryId || '');
       if (!sheet || !entryId) return _err('entryId mangler');
@@ -338,7 +362,7 @@ function doPost(e) {
 
     // ── newDay ───────────────────────────────────────────────────
     // Nulstil alle afsluttede øvelser: LastWeight=TodayWeight, LastReps=TodayReps, Completed='no'
-    if (data.action === 'newDay') {
+    if (data.action === ACTIONS.NEW_DAY) {
       const sheet = ss.getSheetByName(SHEET_EXERCISES);
       if (!sheet || sheet.getLastRow() < 2) return _ok({ reset: 0 });
 
@@ -351,11 +375,11 @@ function doPost(e) {
       const colMap = {}; // kolonnenavn → 0-baseret indeks
       actualHeaders.forEach((h, i) => { if (h) colMap[h] = i; });
 
-      const colCompleted   = colMap['Completed'];
-      const colLastWeight  = colMap['LastWeight'];
-      const colTodayWeight = colMap['TodayWeight'];
-      const colLastReps    = colMap['LastReps'];
-      const colTodayReps   = colMap['TodayReps'];
+      const colCompleted   = colMap[EXERCISE_COLS.COMPLETED];
+      const colLastWeight  = colMap[EXERCISE_COLS.LAST_WEIGHT];
+      const colTodayWeight = colMap[EXERCISE_COLS.TODAY_WEIGHT];
+      const colLastReps    = colMap[EXERCISE_COLS.LAST_REPS];
+      const colTodayReps   = colMap[EXERCISE_COLS.TODAY_REPS];
 
       if (colCompleted === undefined) return _ok({ reset: 0 });
 
@@ -377,7 +401,7 @@ function doPost(e) {
     // ── markCompleted ────────────────────────────────────────────
     // Marker én øvelse som afsluttet og gem dagens vægt/reps i Log
     // body: { action, secret, entryId, todayWeight, todayReps, logEntry: { ... } }
-    if (data.action === 'markCompleted') {
+    if (data.action === ACTIONS.MARK_COMPLETED) {
       const sheet   = _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
         r => r.setBackground('#1a2a38').setFontColor('#4ec9f7'));
       const entryId = String(data.entryId || '');
@@ -397,14 +421,14 @@ function doPost(e) {
       for (let i = 0; i < ids.length; i++) {
         if (String(ids[i][0]) === entryId) {
           const rowNum = i + 2;
-          if (data.todayWeight !== undefined && colMap['TodayWeight']) {
-            sheet.getRange(rowNum, colMap['TodayWeight']).setValue(data.todayWeight);
+          if (data.todayWeight !== undefined && colMap[EXERCISE_COLS.TODAY_WEIGHT]) {
+            sheet.getRange(rowNum, colMap[EXERCISE_COLS.TODAY_WEIGHT]).setValue(data.todayWeight);
           }
-          if (data.todayReps !== undefined && colMap['TodayReps']) {
-            sheet.getRange(rowNum, colMap['TodayReps']).setValue(data.todayReps);
+          if (data.todayReps !== undefined && colMap[EXERCISE_COLS.TODAY_REPS]) {
+            sheet.getRange(rowNum, colMap[EXERCISE_COLS.TODAY_REPS]).setValue(data.todayReps);
           }
-          if (colMap['Completed'])        sheet.getRange(rowNum, colMap['Completed']).setValue('yes');
-          if (colMap['LastCompletedDate']) sheet.getRange(rowNum, colMap['LastCompletedDate']).setValue(today);
+          if (colMap[EXERCISE_COLS.COMPLETED])        sheet.getRange(rowNum, colMap[EXERCISE_COLS.COMPLETED]).setValue('yes');
+          if (colMap[EXERCISE_COLS.LAST_COMPLETED_DATE]) sheet.getRange(rowNum, colMap[EXERCISE_COLS.LAST_COMPLETED_DATE]).setValue(today);
           break;
         }
       }
@@ -422,13 +446,13 @@ function doPost(e) {
 
     // ── logWorkout ───────────────────────────────────────────────
     // Tilføj én log-post (bruges hvis PWA logger manuelt)
-    if (data.action === 'logWorkout') {
+    if (data.action === ACTIONS.LOG_WORKOUT) {
       const entryId = _appendLogEntry(ss, data.entry || data);
       return _ok({ entryId });
     }
 
     // ── deleteLog ────────────────────────────────────────────────
-    if (data.action === 'deleteLog') {
+    if (data.action === ACTIONS.DELETE_LOG) {
       const sheet   = ss.getSheetByName(SHEET_LOG);
       const entryId = String(data.entryId || '');
       if (!sheet || !entryId) return _err('entryId mangler');
@@ -451,7 +475,7 @@ function doPost(e) {
 
     // ── importExercises ──────────────────────────────────────────
     // body: { action, secret, rows: [ { Exercise, Type, Category, Day, ... }, ... ] }
-    if (data.action === 'importExercises') {
+    if (data.action === ACTIONS.IMPORT_EXERCISES) {
       const sheet = _getOrCreateSheet(ss, SHEET_EXERCISES, EXERCISE_HEADERS,
         r => r.setBackground('#1a2a38').setFontColor('#4ec9f7'));
 
@@ -499,7 +523,7 @@ function doPost(e) {
 
     // ── importLog ────────────────────────────────────────────────
     // body: { action, secret, rows: [ { Date, Type, Exercise, Day, ... }, ... ] }
-    if (data.action === 'importLog') {
+    if (data.action === ACTIONS.IMPORT_LOG) {
       const sheet = _getOrCreateSheet(ss, SHEET_LOG, LOG_HEADERS,
         r => r.setBackground('#0f1923').setFontColor('#4ec9f7'));
 
