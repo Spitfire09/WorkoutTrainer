@@ -549,3 +549,36 @@
       border-radius: var(--radius-sm); padding: 9px 13px;
       font-size: 13px; color: #93c5fd;
     }
+
+    /* ── Smart day suggestion bar ──────────────────────────────── */
+    .sugg-card {
+      background: linear-gradient(135deg, rgba(59,130,246,.1), rgba(34,211,238,.07));
+      border: 1px solid rgba(34,211,238,.25);
+      border-radius: var(--radius); padding: 11px 14px;
+    }
+    .sugg-main {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sugg-icon { font-size: 18px; flex-shrink: 0; }
+    .sugg-text { flex: 1; font-size: 14px; color: var(--text2); }
+    .sugg-text strong { color: var(--accent2); }
+    .sugg-btn {
+      padding: 7px 14px; font-size: 13px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(34,211,238,.18));
+      border: 1px solid rgba(34,211,238,.35); color: var(--accent2);
+      cursor: pointer; font-weight: 600; font-family: inherit;
+      transition: background .15s; flex-shrink: 0;
+    }
+    .sugg-btn:hover { background: linear-gradient(135deg, rgba(59,130,246,.45), rgba(34,211,238,.32)); }
+    .sugg-btn:active { opacity: .8; }
+    .sugg-backups {
+      margin-top: 8px; padding-top: 8px;
+      border-top: 1px solid rgba(34,211,238,.15);
+      font-size: 12px; color: var(--muted); line-height: 1.9;
+    }
+    .sugg-backup-item {
+      display: inline-block;
+      background: rgba(34,211,238,.07); border: 1px solid rgba(34,211,238,.15);
+      border-radius: 6px; padding: 2px 8px; margin: 2px 3px; color: var(--text2);
+    }
+    .sugg-backup-day { color: var(--muted); font-size: 11px; margin-left: 3px; }
