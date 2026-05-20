@@ -709,6 +709,47 @@ function loadSettings() {
   document.getElementById('cfg-url').value          = cfg.url          || '';
   document.getElementById('cfg-secret').value       = cfg.secret       || '';
   document.getElementById('cfg-rest-duration').value = cfg.restDuration ?? 90;
+  loadChangelog();
+}
+
+async function loadChangelog() {
+  try {
+    const resp = await fetch('./CHANGELOG.json?' + Date.now());
+    const entries = await resp.json();
+    const latest5 = entries.slice(0, 5);
+    const container = document.getElementById('changelog-list');
+    container.innerHTML = latest5.map(e => {
+      const d = e.timestamp ? new Date(e.timestamp) : null;
+      const formatted = d ? d.toLocaleString('da-DK', { dateStyle: 'short', timeStyle: 'short' }) : e.date;
+      return `<p style="margin:4px 0;font-size:13px"><strong>${esc(e.version)}</strong> <span style="color:var(--muted)">(${formatted})</span><br><span style="color:var(--text)">${esc(e.description)}</span></p>`;
+    }).join('');
+  } catch (_) {
+    document.getElementById('changelog-list').textContent = 'Kunne ikke indlæse versionshistorik.';
+  }
+}
+
+async function checkForUpdate() {
+  toast('🔄 Søger efter opdatering…');
+  try {
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    }
+    // Clear all caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        await caches.delete(key);
+      }
+    }
+    toast('✅ Cache ryddet – genindlæser…');
+    setTimeout(() => location.reload(true), 500);
+  } catch (e) {
+    toast('❌ Fejl ved opdatering: ' + e.message);
+  }
 }
 
 function exportJson() {
@@ -1544,6 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-test-conn').addEventListener('click', testConnection);
   document.getElementById('btn-sync').addEventListener('click', syncAll);
   document.getElementById('btn-export-json').addEventListener('click', exportJson);
+  document.getElementById('btn-check-update').addEventListener('click', checkForUpdate);
 
   // Import from file
   document.getElementById('btn-import-exercises').addEventListener('click', importExercisesFromFile);
