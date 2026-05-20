@@ -48,6 +48,10 @@ function isoDate(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+function isoTime(date = new Date()) {
+  return date.toTimeString().slice(0, 5);
+}
+
 function sortDayValues(values) {
   return [...values].sort((a, b) => {
     const na = parseInt(a), nb = parseInt(b);
@@ -63,11 +67,13 @@ function apiGetUrl(baseUrl, action, secret) {
   return `${baseUrl}?${params.toString()}`;
 }
 
-function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate() }) {
+function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate(), set = ex.set, timeOnly = isoTime() }) {
+  const normalizedDateOnly = dateOnly || isoDate();
+  const normalizedTimeOnly = timeOnly || isoTime();
   return {
     ...DEFAULTS.log,
     entryId: uid(),
-    date: new Date().toLocaleString('da-DK'),
+    date: `${normalizedDateOnly} ${normalizedTimeOnly}`,
     type: ex.type,
     exercise: ex.exercise,
     day: String(ex.day),
@@ -75,9 +81,9 @@ function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSet
     todayWeight,
     lastReps: ex.lastReps,
     todayReps,
-    dateOnly,
-    timeOnly: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
-    set: ex.set,
+    dateOnly: normalizedDateOnly,
+    timeOnly: normalizedTimeOnly,
+    set,
     setNumber,
     totalSets,
     muscleGroup: ex.muscleGroup || ''
@@ -435,8 +441,8 @@ function renderLog() {
     (e.dateOnly||'').includes(q));
 
   filtered = filtered
-    .map(e => ({ e, key: (e.dateOnly || deriveDateOnly(e.date) || '') + 'T' + (e.timeOnly || '00:00') }))
-    .sort((a, b) => b.key.localeCompare(a.key))
+    .map(e => ({ e, key: logEntrySortValue(e) }))
+    .sort((a, b) => b.key - a.key)
     .map(({ e }) => e);
 
   if (!filtered.length) {
@@ -625,9 +631,39 @@ function deriveDateOnly(dateStr) {
   return '';
 }
 
+function normalizeTimeOnly(timeStr) {
+  if (!timeStr) return '';
+  const m = String(timeStr).trim().match(/(\d{1,2})[:.](\d{2})/);
+  if (!m) return '';
+  const h = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
+  const min = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
+  return `${h}:${min}`;
+}
+
+function deriveTimeOnly(dateStr) {
+  if (!dateStr) return '';
+  const m = String(dateStr).match(/(\d{1,2})[:.](\d{2})/);
+  if (!m) return '';
+  return normalizeTimeOnly(`${m[1]}:${m[2]}`);
+}
+
+function logEntrySortValue(entry) {
+  const dateOnly = entry.dateOnly || deriveDateOnly(entry.date) || '';
+  const timeOnly = normalizeTimeOnly(entry.timeOnly) || deriveTimeOnly(entry.date) || '00:00';
+  if (dateOnly) {
+    const ts = new Date(`${dateOnly}T${timeOnly}:00`).getTime();
+    if (!isNaN(ts)) return ts;
+  }
+  const fallbackTs = new Date(entry.date || '').getTime();
+  return isNaN(fallbackTs) ? 0 : fallbackTs;
+}
+
 function normalizeLogEntry(e) {
-  const rawDate  = e.date        || e.Date      || '';
-  const dateOnly = e.dateOnly    || e.DateOnly  || deriveDateOnly(rawDate);
+  const sourceDateOnly = e.dateOnly || e.DateOnly || '';
+  const sourceTimeOnly = normalizeTimeOnly(e.timeOnly || e.TimeOnly || '');
+  const rawDate  = e.date || e.Date || (sourceDateOnly ? `${sourceDateOnly} ${sourceTimeOnly || '00:00'}` : (sourceTimeOnly ? `1970-01-01 ${sourceTimeOnly}` : ''));
+  const dateOnly = sourceDateOnly || deriveDateOnly(rawDate);
+  const timeOnly = sourceTimeOnly || deriveTimeOnly(rawDate) || DEFAULTS.log.timeOnly;
   return {
     ...DEFAULTS.log,
     entryId:     e.entryId     || e.EntryID  || uid(),
@@ -640,7 +676,7 @@ function normalizeLogEntry(e) {
     lastReps:    Number(e.lastReps    ?? e.LastReps    ?? DEFAULTS.log.lastReps) || 0,
     todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? DEFAULTS.log.todayReps) || 0,
     dateOnly,
-    timeOnly:    e.timeOnly    || e.TimeOnly  || DEFAULTS.log.timeOnly,
+    timeOnly,
     set:         e.set         ?? e.Set       ?? DEFAULTS.log.set,
     setNumber:   e.setNumber   ?? e.SetNumber ?? DEFAULTS.log.setNumber,
     totalSets:   e.totalSets   ?? DEFAULTS.log.totalSets,
@@ -894,7 +930,7 @@ async function quickLogSet() {
   const isNewPR = checkPR(ex.exercise, todayWeight);
 
   const logEntry = {
-    ...createLogEntry(ex, { todayWeight, todayReps, setNumber, totalSets: total }),
+    ...createLogEntry(ex, { todayWeight, todayReps, set: 1, setNumber, totalSets: total }),
     isPR: isNewPR
   };
   logEntries.unshift(logEntry);
