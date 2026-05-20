@@ -170,8 +170,8 @@ function _normalizeTimeOnly(val) {
   if (!val) return '';
   const m = String(val).trim().match(/(\d{1,2})[:.](\d{2})/);
   if (!m) return '';
-  const hh = ('0' + Math.min(23, Math.max(0, Number(m[1])))).slice(-2);
-  const mm = ('0' + Math.min(59, Math.max(0, Number(m[2])))).slice(-2);
+  const hh = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
+  const mm = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
   return hh + ':' + mm;
 }
 
@@ -674,6 +674,11 @@ function setupSheets() {
 }
 
 /**
+ * One-time migration helper (idempotent).
+ * Fills missing Date cells in Log based on DateOnly + TimeOnly.
+ * Existing Date values are kept as-is.
+ * Returns { updated, skipped } for audit/reporting.
+ *
  * Engangsmigrering (idempotent):
  * Udfylder kun manglende Date i Log ud fra DateOnly + TimeOnly.
  * Kør den manuelt efter deploy, hvis historiske rækker mangler Date.

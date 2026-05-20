@@ -67,7 +67,7 @@ function apiGetUrl(baseUrl, action, secret) {
   return `${baseUrl}?${params.toString()}`;
 }
 
-function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate(), set = ex.set, timeOnly = isoTime() }) {
+function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate(), set = ex?.set ?? DEFAULTS.log.set, timeOnly = isoTime() }) {
   const normalizedDateOnly = dateOnly || isoDate();
   const normalizedTimeOnly = timeOnly || isoTime();
   return {
