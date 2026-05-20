@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.0",
+    "description": "Log sorteres nu korrekt efter dato (nyeste først). Tilføjet knap til at søge efter opdateringer under Indstillinger for at løse cache-problemer på installeret PWA.",
+    "date": "2026-05-20",
+    "timestamp": "2026-05-20T14:47:00Z"
+  },
+  {
     "version": "1.7.0",
     "description": "Compound-øvelser sorteres nu først i dagtræningslisten. Fuld versionshistorik i CHANGELOG.json; de 5 seneste versioner vises under Indstillinger.",
     "date": "2026-05-17",
