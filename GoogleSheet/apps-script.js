@@ -616,7 +616,7 @@ function _appendLogEntry(ss, entry) {
   let dateObj = rawDate ? _parseDate(rawDate) : now;
   if (isNaN(dateObj.getTime())) dateObj = now;
 
-  const formattedDate  = Utilities.formatDate(dateObj, tz, 'yyyy-MM-dd HH:mm');
+  const formattedDate  = Utilities.formatDate(dateObj, tz, 'dd-MM-yyyy HH:mm');
   const dateOnly       = providedDateOnly || Utilities.formatDate(dateObj, tz, 'yyyy-MM-dd');
   const timeOnly       = providedTimeOnly || Utilities.formatDate(dateObj, tz, 'HH:mm');
 
@@ -674,9 +674,12 @@ function setupSheets() {
 }
 
 /**
- * Engangsmigrering:
- * Udfylder manglende Date i Log ud fra DateOnly + TimeOnly.
+ * Engangsmigrering (idempotent):
+ * Udfylder kun manglende Date i Log ud fra DateOnly + TimeOnly.
+ * Kør den manuelt efter deploy, hvis historiske rækker mangler Date.
+ * Eksisterende Date-værdier røres ikke.
  * Hvis DateOnly mangler men TimeOnly findes, bruges 1970-01-01 som dato.
+ * Returnerer { updated, skipped } for audit.
  */
 function migrateLogDateFromDateOnlyTimeOnly() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
