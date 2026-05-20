@@ -452,7 +452,7 @@ function renderLog() {
       <div class="log-card-info">
         <h3>${esc(entry.exercise)}${prBadge}</h3>
         <p>${entry.todayWeight} kg, ${entry.todayReps} reps${setInfo} (mål: ${entry.lastWeight} kg, ${entry.lastReps} reps)</p>
-        <p>${esc(entry.dateOnly || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
+        <p>${esc(entry.dateOnly || deriveDateOnly(entry.date) || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
       </div>
       <button class="btn-icon-danger" data-id="${entry.entryId}" title="Slet" aria-label="Slet log-post">🗑</button>`;
     card.querySelector('.btn-icon-danger').addEventListener('click', e => {
@@ -615,7 +615,13 @@ function deriveDateOnly(dateStr) {
   if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.slice(0, 10);
   // Try native Date parsing (handles Date.toString(), ISO-with-T, RFC 2822, etc.)
   const d = new Date(dateStr);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  if (!isNaN(d.getTime())) {
+    // Use local date (not UTC) to avoid shifting dates back for GMT+ timezones
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
   return '';
 }
 
@@ -1330,7 +1336,7 @@ function renderAnalyse() {
     exWithLog.forEach(ex => {
       const exEntries = logEntries
         .filter(e => e.exercise === ex.exercise && e.todayWeight > 0)
-        .sort((a, b) => a.dateOnly.localeCompare(b.dateOnly));
+        .sort((a, b) => (a.dateOnly || deriveDateOnly(a.date) || '').localeCompare(b.dateOnly || deriveDateOnly(b.date) || ''));
       if (!exEntries.length) return;
       const maxW  = Math.max(...exEntries.map(e => e.todayWeight));
       const lastW = exEntries[exEntries.length - 1].todayWeight;
@@ -1432,17 +1438,18 @@ function renderAnalyse() {
   const muscleLastDate = {};
   const recoveryWarnings = [];
   logEntries
-    .filter(e => e.muscleGroup && e.dateOnly)
-    .sort((a, b) => a.dateOnly.localeCompare(b.dateOnly))
+    .filter(e => e.muscleGroup && (e.dateOnly || deriveDateOnly(e.date)))
+    .sort((a, b) => (a.dateOnly || deriveDateOnly(a.date) || '').localeCompare(b.dateOnly || deriveDateOnly(b.date) || ''))
     .forEach(e => {
       const mg = e.muscleGroup;
-      const date = new Date(e.dateOnly + 'T00:00:00');
+      const dateStr = e.dateOnly || deriveDateOnly(e.date);
+      const date = new Date(dateStr + 'T00:00:00');
       if (muscleLastDate[mg]) {
         const diffH = (date - muscleLastDate[mg]) / MS_PER_HOUR;
         if (diffH > 0 && diffH < 48) {
-          const key = mg + e.dateOnly;
+          const key = mg + dateStr;
           if (!recoveryWarnings.find(w => w.key === key)) {
-            recoveryWarnings.push({ key, muscle: mg, hours: Math.round(diffH), date: e.dateOnly });
+            recoveryWarnings.push({ key, muscle: mg, hours: Math.round(diffH), date: dateStr });
           }
         }
       }
