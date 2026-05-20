@@ -1336,7 +1336,9 @@ function renderAnalyse() {
     exWithLog.forEach(ex => {
       const exEntries = logEntries
         .filter(e => e.exercise === ex.exercise && e.todayWeight > 0)
-        .sort((a, b) => (a.dateOnly || deriveDateOnly(a.date) || '').localeCompare(b.dateOnly || deriveDateOnly(b.date) || ''));
+        .map(e => ({ e, _d: e.dateOnly || deriveDateOnly(e.date) || '' }))
+        .sort((a, b) => a._d.localeCompare(b._d))
+        .map(({ e }) => e);
       if (!exEntries.length) return;
       const maxW  = Math.max(...exEntries.map(e => e.todayWeight));
       const lastW = exEntries[exEntries.length - 1].todayWeight;
@@ -1439,10 +1441,11 @@ function renderAnalyse() {
   const recoveryWarnings = [];
   logEntries
     .filter(e => e.muscleGroup && (e.dateOnly || deriveDateOnly(e.date)))
-    .sort((a, b) => (a.dateOnly || deriveDateOnly(a.date) || '').localeCompare(b.dateOnly || deriveDateOnly(b.date) || ''))
-    .forEach(e => {
+    .map(e => ({ e, _d: e.dateOnly || deriveDateOnly(e.date) }))
+    .sort((a, b) => a._d.localeCompare(b._d))
+    .forEach(({ e, _d }) => {
       const mg = e.muscleGroup;
-      const dateStr = e.dateOnly || deriveDateOnly(e.date);
+      const dateStr = _d;
       const date = new Date(dateStr + 'T00:00:00');
       if (muscleLastDate[mg]) {
         const diffH = (date - muscleLastDate[mg]) / MS_PER_HOUR;
