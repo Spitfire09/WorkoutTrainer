@@ -44,8 +44,6 @@
     todayWeight: 0,
     lastReps: 0,
     todayReps: 0,
-    dateOnly: '',
-    timeOnly: '',
     set: null,
     setNumber: null,
     totalSets: null,

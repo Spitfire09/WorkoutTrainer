@@ -47,7 +47,7 @@ const EXERCISE_HEADERS = [
 const LOG_HEADERS = [
   'EntryID', 'Date', 'Type', 'Exercise', 'Day',
   'LastWeight', 'TodayWeight', 'LastReps', 'TodayReps',
-  'DateOnly', 'TimeOnly', 'Set', 'SetNumber', 'MuscleGroup'
+  'Set', 'SetNumber', 'MuscleGroup'
 ];
 
 
@@ -166,34 +166,6 @@ function _parseDate(val) {
   return new Date(val);
 }
 
-function _normalizeTimeOnly(val) {
-  if (!val) return '';
-  const m = String(val).trim().match(/(\d{1,2})[:.](\d{2})/);
-  if (!m) return '';
-  const hh = String(Math.min(23, Math.max(0, Number(m[1])))).padStart(2, '0');
-  const mm = String(Math.min(59, Math.max(0, Number(m[2])))).padStart(2, '0');
-  return hh + ':' + mm;
-}
-
-function _composeDateFromParts(dateOnly, timeOnly) {
-  const d = dateOnly ? String(dateOnly).trim() : '';
-  const t = _normalizeTimeOnly(timeOnly) || '00:00';
-  if (d) return d + ' ' + t;
-  if (_normalizeTimeOnly(timeOnly)) return '1970-01-01 ' + t;
-  return '';
-}
-
-function _logSortValue(entry) {
-  const dateOnly = entry.dateOnly || '';
-  const timeOnly = _normalizeTimeOnly(entry.timeOnly) || '00:00';
-  if (dateOnly) {
-    const ts = new Date(dateOnly + 'T' + timeOnly + ':00').getTime();
-    if (!isNaN(ts)) return ts;
-  }
-  const fallback = new Date(entry.date || '').getTime();
-  return isNaN(fallback) ? 0 : fallback;
-}
-
 // ════════════════════════════════════════════════════════════════
 //  doGet — læs data
 // ════════════════════════════════════════════════════════════════
@@ -250,9 +222,7 @@ function doGet(e) {
       const rows = _sheetToObjects(sheet, LOG_HEADERS);
       const entries = rows.map(r => ({
         entryId:     String(r.EntryID || ''),
-        dateOnly:    r.DateOnly  ? String(r.DateOnly)  : '',
-        timeOnly:    _normalizeTimeOnly(r.TimeOnly ? String(r.TimeOnly) : ''),
-        date:        r.Date ? String(r.Date) : _composeDateFromParts(r.DateOnly ? String(r.DateOnly) : '', r.TimeOnly ? String(r.TimeOnly) : ''),
+        date:        r.Date ? String(r.Date) : '',
         type:        String(r.Type     || ''),
         exercise:    String(r.Exercise || ''),
         day:         String(r.Day      || ''),
@@ -266,7 +236,11 @@ function doGet(e) {
         synced:      true
       }));
       // Nyeste først
-      entries.sort((a, b) => _logSortValue(b) - _logSortValue(a));
+      entries.sort((a, b) => {
+        const tsA = new Date(a.date || '').getTime() || 0;
+        const tsB = new Date(b.date || '').getTime() || 0;
+        return tsB - tsA;
+      });
       return _ok({ entries });
     }
 
@@ -567,9 +541,10 @@ function doPost(e) {
       rows.forEach(entry => {
         const entryId = entry.entryId || entry.__PowerAppsId__ || entry.EntryID || _uid();
         if (existingIds.has(String(entryId))) { skipped++; return; }
-        const dateOnly = entry.DateOnly || entry.dateOnly || '';
-        const timeOnly = _normalizeTimeOnly(entry.TimeOnly || entry.timeOnly || '');
-        const dateValue = entry.Date || entry.date || _composeDateFromParts(dateOnly, timeOnly);
+        // Support legacy entries that may have dateOnly/timeOnly but no Date
+        const legacyDateOnly = entry.DateOnly || entry.dateOnly || '';
+        const legacyTimeOnly = entry.TimeOnly || entry.timeOnly || '';
+        const dateValue = entry.Date || entry.date || (legacyDateOnly ? `${legacyDateOnly} ${legacyTimeOnly || '00:00'}` : '');
         sheet.appendRow([
           entryId,
           dateValue,
@@ -580,8 +555,6 @@ function doPost(e) {
           entry.TodayWeight !== undefined ? entry.TodayWeight : entry.todayWeight !== undefined ? entry.todayWeight : 0,
           entry.LastReps    !== undefined ? entry.LastReps    : entry.lastReps    !== undefined ? entry.lastReps    : 0,
           entry.TodayReps   !== undefined ? entry.TodayReps   : entry.todayReps   !== undefined ? entry.todayReps   : 0,
-          dateOnly,
-          timeOnly,
           entry.Set         !== undefined ? entry.Set         : entry.set         !== undefined ? entry.set         : '',
           entry.SetNumber   !== undefined ? entry.SetNumber   : entry.setNumber   !== undefined ? entry.setNumber   : '',
           entry.MuscleGroup || entry.muscleGroup || ''
@@ -610,15 +583,11 @@ function _appendLogEntry(ss, entry) {
   const now      = new Date();
   const entryId  = entry.entryId || _uid();
 
-  const providedDateOnly = entry.dateOnly || entry.DateOnly || '';
-  const providedTimeOnly = _normalizeTimeOnly(entry.timeOnly || entry.TimeOnly || '');
-  let rawDate = entry.date || entry.Date || _composeDateFromParts(providedDateOnly, providedTimeOnly);
+  let rawDate = entry.date || entry.Date || '';
   let dateObj = rawDate ? _parseDate(rawDate) : now;
   if (isNaN(dateObj.getTime())) dateObj = now;
 
-  const formattedDate  = Utilities.formatDate(dateObj, tz, 'dd-MM-yyyy HH:mm');
-  const dateOnly       = providedDateOnly || Utilities.formatDate(dateObj, tz, 'yyyy-MM-dd');
-  const timeOnly       = providedTimeOnly || Utilities.formatDate(dateObj, tz, 'HH:mm');
+  const formattedDate  = Utilities.formatDate(dateObj, tz, 'yyyy-MM-dd HH:mm');
 
   sheet.appendRow([
     entryId,
@@ -630,8 +599,6 @@ function _appendLogEntry(ss, entry) {
     entry.todayWeight !== undefined ? entry.todayWeight : entry.TodayWeight !== undefined ? entry.TodayWeight : 0,
     entry.lastReps    !== undefined ? entry.lastReps    : entry.LastReps    !== undefined ? entry.LastReps    : 0,
     entry.todayReps   !== undefined ? entry.todayReps   : entry.TodayReps   !== undefined ? entry.TodayReps   : 0,
-    dateOnly,
-    timeOnly,
     entry.set         !== undefined ? entry.set         : entry.Set         !== undefined ? entry.Set         : '',
     entry.setNumber   !== undefined ? entry.setNumber   : entry.SetNumber   !== undefined ? entry.SetNumber   : '',
     entry.muscleGroup || entry.MuscleGroup || ''
@@ -671,54 +638,6 @@ function setupSheets() {
   _ensureColumns(exSheet,  EXERCISE_HEADERS);
   _ensureColumns(logSheet, LOG_HEADERS);
   SpreadsheetApp.getUi().alert('Sheets opsat/opdateret ✅');
-}
-
-/**
- * One-time migration helper (idempotent).
- * Fills missing Date cells in Log based on DateOnly + TimeOnly.
- * Existing Date values are kept as-is.
- * Returns { updated, skipped } for audit/reporting.
- *
- * Engangsmigrering (idempotent):
- * Udfylder kun manglende Date i Log ud fra DateOnly + TimeOnly.
- * Kør den manuelt efter deploy, hvis historiske rækker mangler Date.
- * Eksisterende Date-værdier røres ikke.
- * Hvis DateOnly mangler men TimeOnly findes, bruges 1970-01-01 som dato.
- * Returnerer { updated, skipped } for audit.
- */
-function migrateLogDateFromDateOnlyTimeOnly() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_LOG);
-  if (!sheet || sheet.getLastRow() < 2) return { updated: 0, skipped: 0 };
-
-  const lastRow = sheet.getLastRow();
-  const lastCol = Math.max(sheet.getLastColumn(), 1);
-  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
-  const colMap = {};
-  headers.forEach((h, i) => { if (h) colMap[h] = i; });
-
-  const cDate = colMap.Date;
-  const cDateOnly = colMap.DateOnly;
-  const cTimeOnly = colMap.TimeOnly;
-  if (cDate === undefined) throw new Error('Date-kolonne mangler i Log');
-
-  const values = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
-  let updated = 0;
-  let skipped = 0;
-
-  values.forEach((row, i) => {
-    const curDate = row[cDate];
-    if (curDate !== '' && curDate !== null) { skipped++; return; }
-    const dateOnly = cDateOnly !== undefined ? row[cDateOnly] : '';
-    const timeOnly = cTimeOnly !== undefined ? row[cTimeOnly] : '';
-    const composed = _composeDateFromParts(dateOnly, timeOnly);
-    if (!composed) { skipped++; return; }
-    sheet.getRange(i + 2, cDate + 1).setValue(composed);
-    updated++;
-  });
-
-  Logger.log('migrateLogDateFromDateOnlyTimeOnly updated=' + updated + ' skipped=' + skipped);
-  return { updated: updated, skipped: skipped };
 }
 
 /**

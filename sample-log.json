@@ -9,8 +9,6 @@
     "todayWeight": 60,
     "lastReps": 10,
     "todayReps": 10,
-    "dateOnly": "2026-04-29",
-    "timeOnly": "18:00",
     "set": 3
   },
   {
@@ -23,8 +21,6 @@
     "todayWeight": 0,
     "lastReps": 7,
     "todayReps": 8,
-    "dateOnly": "2026-04-28",
-    "timeOnly": "17:30",
     "set": 4
   },
   {
@@ -37,8 +33,6 @@
     "todayWeight": 80,
     "lastReps": 8,
     "todayReps": 8,
-    "dateOnly": "2026-04-27",
-    "timeOnly": "16:45",
     "set": 4
   }
 ]

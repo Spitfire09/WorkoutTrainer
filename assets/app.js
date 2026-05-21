@@ -67,13 +67,11 @@ function apiGetUrl(baseUrl, action, secret) {
   return `${baseUrl}?${params.toString()}`;
 }
 
-function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, dateOnly = isoDate(), set = ex?.set ?? DEFAULTS.log.set, timeOnly = isoTime() }) {
-  const normalizedDateOnly = dateOnly || isoDate();
-  const normalizedTimeOnly = timeOnly || isoTime();
+function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSets = null, date = `${isoDate()} ${isoTime()}`, set = ex?.set ?? DEFAULTS.log.set }) {
   return {
     ...DEFAULTS.log,
     entryId: uid(),
-    date: `${normalizedDateOnly} ${normalizedTimeOnly}`,
+    date,
     type: ex.type,
     exercise: ex.exercise,
     day: String(ex.day),
@@ -81,8 +79,6 @@ function createLogEntry(ex, { todayWeight, todayReps, setNumber = null, totalSet
     todayWeight,
     lastReps: ex.lastReps,
     todayReps,
-    dateOnly: normalizedDateOnly,
-    timeOnly: normalizedTimeOnly,
     set,
     setNumber,
     totalSets,
@@ -140,8 +136,10 @@ function exStaleness(exerciseName) {
   const todayMidnightMs = new Date().setHours(0, 0, 0, 0);
   let latest = null;
   for (const e of logEntries) {
-    if (e.exercise === exerciseName && e.dateOnly) {
-      const d = new Date(e.dateOnly + 'T00:00:00').getTime();
+    if (e.exercise === exerciseName) {
+      const dateStr = deriveDateOnly(e.date);
+      if (!dateStr) continue;
+      const d = new Date(dateStr + 'T00:00:00').getTime();
       if (latest === null || d > latest) latest = d;
     }
   }
@@ -438,7 +436,7 @@ function renderLog() {
   if (q) filtered = filtered.filter(e =>
     (e.exercise||'').toLowerCase().includes(q) ||
     (e.type||'').toLowerCase().includes(q) ||
-    (e.dateOnly||'').includes(q));
+    (e.date||'').includes(q));
 
   filtered = filtered
     .map(e => ({ e, key: logEntrySortValue(e) }))
@@ -458,7 +456,7 @@ function renderLog() {
       <div class="log-card-info">
         <h3>${esc(entry.exercise)}${prBadge}</h3>
         <p>${entry.todayWeight} kg, ${entry.todayReps} reps${setInfo} (mål: ${entry.lastWeight} kg, ${entry.lastReps} reps)</p>
-        <p>${esc(entry.dateOnly || deriveDateOnly(entry.date) || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
+        <p>${esc(deriveDateOnly(entry.date) || entry.date)} &nbsp;·&nbsp; Dag: ${esc(String(entry.day))} &nbsp;·&nbsp; ${esc(entry.type)}</p>
       </div>
       <button class="btn-icon-danger" data-id="${entry.entryId}" title="Slet" aria-label="Slet log-post">🗑</button>`;
     card.querySelector('.btn-icon-danger').addEventListener('click', e => {
@@ -619,6 +617,9 @@ function deriveDateOnly(dateStr) {
   if (!dateStr) return '';
   // Already ISO (YYYY-MM-DD or YYYY-MM-DD ...) — fastest path
   if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) return dateStr.slice(0, 10);
+  // Try DD-MM-YYYY format
+  const euMatch = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (euMatch) return `${euMatch[3]}-${euMatch[2]}-${euMatch[1]}`;
   // Try native Date parsing (handles Date.toString(), ISO-with-T, RFC 2822, etc.)
   const d = new Date(dateStr);
   if (!isNaN(d.getTime())) {
@@ -640,30 +641,31 @@ function normalizeTimeOnly(timeStr) {
   return `${h}:${min}`;
 }
 
-function deriveTimeOnly(dateStr) {
-  if (!dateStr) return '';
-  const m = String(dateStr).match(/(\d{1,2})[:.](\d{2})/);
-  if (!m) return '';
-  return normalizeTimeOnly(`${m[1]}:${m[2]}`);
-}
-
 function logEntrySortValue(entry) {
-  const dateOnly = entry.dateOnly || deriveDateOnly(entry.date) || '';
-  const timeOnly = normalizeTimeOnly(entry.timeOnly) || deriveTimeOnly(entry.date) || '00:00';
-  if (dateOnly) {
-    const ts = new Date(`${dateOnly}T${timeOnly}:00`).getTime();
+  const dateStr = entry.date || '';
+  if (!dateStr) return 0;
+  // Try parsing "YYYY-MM-DD HH:mm" format first
+  const isoMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+  if (isoMatch) {
+    const ts = new Date(`${isoMatch[1]}T${isoMatch[2]}:00`).getTime();
     if (!isNaN(ts)) return ts;
   }
-  const fallbackTs = new Date(entry.date || '').getTime();
+  // Try parsing "DD-MM-YYYY HH:mm" format
+  const euMatch = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{1,2}:\d{2})/);
+  if (euMatch) {
+    const ts = new Date(`${euMatch[3]}-${euMatch[2]}-${euMatch[1]}T${euMatch[4]}:00`).getTime();
+    if (!isNaN(ts)) return ts;
+  }
+  // Fallback: native Date parsing
+  const fallbackTs = new Date(dateStr).getTime();
   return isNaN(fallbackTs) ? 0 : fallbackTs;
 }
 
 function normalizeLogEntry(e) {
+  // Support legacy entries that may still carry dateOnly/timeOnly
   const sourceDateOnly = e.dateOnly || e.DateOnly || '';
   const sourceTimeOnly = normalizeTimeOnly(e.timeOnly || e.TimeOnly || '');
   const rawDate  = e.date || e.Date || (sourceDateOnly ? `${sourceDateOnly} ${sourceTimeOnly || '00:00'}` : (sourceTimeOnly ? `1970-01-01 ${sourceTimeOnly}` : ''));
-  const dateOnly = sourceDateOnly || deriveDateOnly(rawDate);
-  const timeOnly = sourceTimeOnly || deriveTimeOnly(rawDate) || DEFAULTS.log.timeOnly;
   return {
     ...DEFAULTS.log,
     entryId:     e.entryId     || e.EntryID  || uid(),
@@ -675,8 +677,6 @@ function normalizeLogEntry(e) {
     todayWeight: Number(e.todayWeight ?? e.TodayWeight ?? DEFAULTS.log.todayWeight) || 0,
     lastReps:    Number(e.lastReps    ?? e.LastReps    ?? DEFAULTS.log.lastReps) || 0,
     todayReps:   Number(e.todayReps   ?? e.TodayReps   ?? DEFAULTS.log.todayReps) || 0,
-    dateOnly,
-    timeOnly,
     set:         e.set         ?? e.Set       ?? DEFAULTS.log.set,
     setNumber:   e.setNumber   ?? e.SetNumber ?? DEFAULTS.log.setNumber,
     totalSets:   e.totalSets   ?? DEFAULTS.log.totalSets,
@@ -894,7 +894,7 @@ async function quickDone() {
   ex.lastCompletedDate = completedDate;
 
   const logEntry = {
-    ...createLogEntry(ex, { todayWeight, todayReps, dateOnly: completedDate }),
+    ...createLogEntry(ex, { todayWeight, todayReps, date: `${completedDate} ${isoTime()}` }),
     isPR: isNewPR
   };
   logEntries.unshift(logEntry);
@@ -993,10 +993,11 @@ function getProgressionHint(ex) {
   // Group log entries by date, keep max weight per session
   const byDate = {};
   logEntries
-    .filter(e => e.exercise === ex.exercise && e.todayWeight > 0 && e.dateOnly)
+    .filter(e => e.exercise === ex.exercise && e.todayWeight > 0 && deriveDateOnly(e.date))
     .forEach(e => {
-      if (!byDate[e.dateOnly] || e.todayWeight > byDate[e.dateOnly].weight) {
-        byDate[e.dateOnly] = { weight: e.todayWeight, reps: e.todayReps || 0 };
+      const d = deriveDateOnly(e.date);
+      if (!byDate[d] || e.todayWeight > byDate[d].weight) {
+        byDate[d] = { weight: e.todayWeight, reps: e.todayReps || 0 };
       }
     });
   const sessions = Object.entries(byDate)
@@ -1019,10 +1020,12 @@ function isStagnant(exName) {
   if (entries.length < 4) return false;
   const maxWeight = Math.max(...entries.map(e => e.todayWeight));
   const prEntry = entries
-    .sort((a, b) => b.dateOnly.localeCompare(a.dateOnly))
+    .sort((a, b) => (deriveDateOnly(b.date) || '').localeCompare(deriveDateOnly(a.date) || ''))
     .find(e => e.todayWeight >= maxWeight);
-  if (!prEntry || !prEntry.dateOnly) return false;
-  const days = (Date.now() - new Date(prEntry.dateOnly + 'T00:00:00').getTime()) / MS_PER_DAY;
+  if (!prEntry) return false;
+  const prDate = deriveDateOnly(prEntry.date);
+  if (!prDate) return false;
+  const days = (Date.now() - new Date(prDate + 'T00:00:00').getTime()) / MS_PER_DAY;
   return days > STAGNATION_DAYS;
 }
 
@@ -1204,14 +1207,15 @@ function renderChart() {
 
   // Gather entries for this exercise, sorted chronologically
   const entries = logEntries
-    .filter(e => e.exercise === name && e.dateOnly)
-    .sort((a, b) => a.dateOnly.localeCompare(b.dateOnly));
+    .filter(e => e.exercise === name && deriveDateOnly(e.date))
+    .sort((a, b) => deriveDateOnly(a.date).localeCompare(deriveDateOnly(b.date)));
 
   // Aggregate: one point per date — take the max weight that day
   const byDate = {};
   entries.forEach(e => {
-    if (!byDate[e.dateOnly] || e.todayWeight > byDate[e.dateOnly].weight) {
-      byDate[e.dateOnly] = { date: e.dateOnly, weight: e.todayWeight, reps: e.todayReps, isPR: !!e.isPR };
+    const d = deriveDateOnly(e.date);
+    if (!byDate[d] || e.todayWeight > byDate[d].weight) {
+      byDate[d] = { date: d, weight: e.todayWeight, reps: e.todayReps, isPR: !!e.isPR };
     }
   });
   const data = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
@@ -1240,7 +1244,8 @@ function renderChart() {
   // Total volume per session (summed across all sets per date)
   const volByDate = {};
   entries.forEach(e => {
-    volByDate[e.dateOnly] = (volByDate[e.dateOnly] || 0) + (e.todayWeight || 0) * (e.todayReps || 0);
+    const d = deriveDateOnly(e.date);
+    volByDate[d] = (volByDate[d] || 0) + (e.todayWeight || 0) * (e.todayReps || 0);
   });
   const lastVol = volByDate[data[data.length - 1].date] || 0;
 
@@ -1274,7 +1279,7 @@ function renderChart() {
   recentEl.innerHTML = entries.slice(0, 8).map(e => `
     <div class="log-card" style="margin-bottom:6px">
       <div class="log-card-info">
-        <h3 style="font-size:13px">${esc(e.dateOnly)} ${e.timeOnly ? '· ' + esc(e.timeOnly) : ''} ${e.isPR ? '<span class="badge-pr">🏆 PR</span>' : ''}</h3>
+        <h3 style="font-size:13px">${esc(deriveDateOnly(e.date))} ${e.isPR ? '<span class="badge-pr">🏆 PR</span>' : ''}</h3>
         <p>${e.todayWeight} kg × ${e.todayReps} reps${e.setNumber ? ' (sæt ' + e.setNumber + '/' + (e.totalSets || e.set || '?') + ')' : ''}</p>
       </div>
     </div>`).join('');
@@ -1413,7 +1418,7 @@ function renderAnalyse() {
     exWithLog.forEach(ex => {
       const exEntries = logEntries
         .filter(e => e.exercise === ex.exercise && e.todayWeight > 0)
-        .map(e => ({ e, _d: e.dateOnly || deriveDateOnly(e.date) || '' }))
+        .map(e => ({ e, _d: deriveDateOnly(e.date) || '' }))
         .sort((a, b) => a._d.localeCompare(b._d))
         .map(({ e }) => e);
       if (!exEntries.length) return;
@@ -1517,8 +1522,8 @@ function renderAnalyse() {
   const muscleLastDate = {};
   const recoveryWarnings = [];
   logEntries
-    .filter(e => e.muscleGroup && (e.dateOnly || deriveDateOnly(e.date)))
-    .map(e => ({ e, _d: e.dateOnly || deriveDateOnly(e.date) }))
+    .filter(e => e.muscleGroup && deriveDateOnly(e.date))
+    .map(e => ({ e, _d: deriveDateOnly(e.date) }))
     .sort((a, b) => a._d.localeCompare(b._d))
     .forEach(({ e, _d }) => {
       const mg = e.muscleGroup;
