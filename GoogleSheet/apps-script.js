@@ -23,14 +23,12 @@
 //   Se seed-data.json for de korrekte dataformater.
 // ══════════════════════════════════════════════════════════════════
 
-// Secret is read from Script Properties (recommended) with a fallback default.
+// Secret is read exclusively from Script Properties.
 // Set it via: Apps Script editor → Project Settings → Script Properties → add key "SECRET_TOKEN"
 const SECRET_TOKEN = (function() {
-  try {
-    return PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN') || 'WorkoutTracker6500!';
-  } catch(_) {
-    return 'WorkoutTracker6500!'; // Fallback (used only in local testing without Properties access)
-  }
+  const token = PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN');
+  if (!token) throw new Error('SECRET_TOKEN er ikke sat i Script Properties. Gå til Projektindstillinger → Scriptegenskaber og tilføj SECRET_TOKEN.');
+  return token;
 })();
 
 // ── Sheet-navne ──────────────────────────────────────────────────
