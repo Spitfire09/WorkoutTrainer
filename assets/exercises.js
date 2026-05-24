@@ -10,6 +10,13 @@ import { toast, spinner, showScreen } from './ui.js';
 import { getPersonalRecord, checkPR, getProgressionHint, isStagnant, renderLog } from './log.js';
 import { startRestTimer } from './timer.js';
 
+function toUtcMidnightTs(dateStr) {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return Date.UTC(year, month - 1, day);
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  RENDER: HOME
 // ══════════════════════════════════════════════════════════════════
@@ -78,8 +85,8 @@ export function renderHome() {
     if (!entry?.exercise) continue;
     const dateStr = deriveDateOnly(entry.date);
     if (!dateStr) continue;
-    const ts = new Date(`${dateStr}T00:00:00`).getTime();
-    if (Number.isNaN(ts)) continue;
+    const ts = toUtcMidnightTs(dateStr);
+    if (ts === null) continue;
     if (!(entry.exercise in latestByExercise) || ts > latestByExercise[entry.exercise]) {
       latestByExercise[entry.exercise] = ts;
     }
@@ -98,10 +105,15 @@ export function renderHome() {
     card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
     const typeAccent = { Push: '#3b82f6', Pull: '#10b981', Leg: '#f59e0b', Core: '#a78bfa' };
     card.style.setProperty('--card-accent', typeAccent[ex.type] || '#3b82f6');
+    const details = [
+      `Dag ${esc(String(ex.day))}`,
+      ex.muscleGroup ? esc(ex.muscleGroup) : '',
+      daysSinceLastLogged !== null ? `${daysSinceLastLogged} dage siden` : ''
+    ].filter(Boolean).join(' &nbsp;·&nbsp; ');
     card.innerHTML = `
       <div class="ex-card-info">
         <h3>${esc(ex.exercise)}</h3>
-        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; Dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}${daysSinceLastLogged !== null ? ` &nbsp;·&nbsp; ${daysSinceLastLogged} dage siden` : ''}</p>
+        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; ${details}</p>
       </div>
       <span class="badge-type badge-type-${esc((ex.type||'').toLowerCase())}">${esc(ex.type)}</span>
       ${progressHint !== null ? '<span class="badge-increase">⬆ Øg vægt</span>' : ''}
@@ -442,4 +454,3 @@ export async function syncAll() {
   }
   spinner(false);
 }
-
