@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.1",
+    "description": "Tilføjet manglende seneste ændring i changelog/versionshistorik. Tekst i øvelseskort viser nu kun antal dage (ikke 'dage siden').",
+    "date": "2026-05-24",
+    "timestamp": "2026-05-24T12:27:55Z"
+  },
+  {
     "version": "1.8.0",
     "description": "Log sorteres nu korrekt efter dato (nyeste først). Tilføjet knap til at søge efter opdateringer under Indstillinger for at løse cache-problemer på installeret PWA.",
     "date": "2026-05-20",
