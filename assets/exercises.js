@@ -3,11 +3,10 @@
 import { API_ACTIONS } from './schema.js';
 import {
   exercises, logEntries, cfg, currentEx, setExercises, setLogEntries, setCurrentEx,
-  save, uid, isoDate, isoTime, sortDayValues, esc, createLogEntry, apiGetUrl
+  save, uid, isoDate, isoTime, sortDayValues, esc, createLogEntry, apiGetUrl, deriveDateOnly, MS_PER_DAY
 } from './state.js';
 import { api, apiFetch } from './api.js';
 import { toast, spinner, showScreen } from './ui.js';
-import { renderSuggestion } from './suggestion.js';
 import { getPersonalRecord, checkPR, getProgressionHint, isStagnant, renderLog } from './log.js';
 import { startRestTimer } from './timer.js';
 
@@ -43,7 +42,6 @@ function buildMuscleOptions() {
 export function renderHome() {
   buildDayOptions();
   buildMuscleOptions();
-  renderSuggestion();
   const typeFilter     = document.getElementById('sel-type').value;
   const dayFilter      = document.getElementById('sel-day').value;
   const categoryFilter = document.getElementById('sel-category').value;
@@ -74,11 +72,28 @@ export function renderHome() {
     return a.exercise.localeCompare(b.exercise);
   });
 
+  const todayMidnightMs = new Date().setHours(0, 0, 0, 0);
+  const latestByExercise = {};
+  for (const entry of logEntries) {
+    if (!entry?.exercise) continue;
+    const dateStr = deriveDateOnly(entry.date);
+    if (!dateStr) continue;
+    const ts = new Date(`${dateStr}T00:00:00`).getTime();
+    if (Number.isNaN(ts)) continue;
+    if (!(entry.exercise in latestByExercise) || ts > latestByExercise[entry.exercise]) {
+      latestByExercise[entry.exercise] = ts;
+    }
+  }
+
   sorted.forEach(ex => {
     const pr = getPersonalRecord(ex.exercise);
     const isPrEx = pr > 0 && ex.todayWeight >= pr && ex.completed === 'yes';
     const stagnant = isStagnant(ex.exercise);
     const progressHint = getProgressionHint(ex);
+    const latestTs = latestByExercise[ex.exercise];
+    const daysSinceLastLogged = latestTs !== undefined
+      ? Math.max(0, Math.floor((todayMidnightMs - latestTs) / MS_PER_DAY))
+      : null;
     const card = document.createElement('div');
     card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
     const typeAccent = { Push: '#3b82f6', Pull: '#10b981', Leg: '#f59e0b', Core: '#a78bfa' };
@@ -86,7 +101,7 @@ export function renderHome() {
     card.innerHTML = `
       <div class="ex-card-info">
         <h3>${esc(ex.exercise)}</h3>
-        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; Dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}</p>
+        <p>Mål: ${ex.lastWeight} kg / ${ex.lastReps} reps &nbsp;·&nbsp; Dag ${esc(String(ex.day))}${ex.muscleGroup ? ` &nbsp;·&nbsp; ${esc(ex.muscleGroup)}` : ''}${daysSinceLastLogged !== null ? ` &nbsp;·&nbsp; ${daysSinceLastLogged} dage siden` : ''}</p>
       </div>
       <span class="badge-type badge-type-${esc((ex.type||'').toLowerCase())}">${esc(ex.type)}</span>
       ${progressHint !== null ? '<span class="badge-increase">⬆ Øg vægt</span>' : ''}
@@ -427,5 +442,4 @@ export async function syncAll() {
   }
   spinner(false);
 }
-
 

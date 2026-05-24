@@ -133,14 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sel-category').addEventListener('change', renderHome);
   document.getElementById('sel-muscle').addEventListener('change', renderHome);
 
-  // Suggestion bar
-  document.getElementById('suggestion-bar').addEventListener('click', e => {
-    const btn = e.target.closest('.sugg-btn');
-    if (!btn) return;
-    document.getElementById('sel-day').value = btn.dataset.day;
-    renderHome();
-  });
-
   // Details
   document.getElementById('btn-det-back').addEventListener('click',   () => { showScreen('screen-home'); renderHome(); });
   document.getElementById('btn-det-save').addEventListener('click',   saveDetails);
