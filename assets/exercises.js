@@ -111,7 +111,7 @@ export function renderHome() {
     const details = [
       `Dag ${esc(String(ex.day))}`,
       ex.muscleGroup ? esc(ex.muscleGroup) : '',
-      daysSinceLastLogged !== null ? `${daysSinceLastLogged} dage siden` : ''
+      daysSinceLastLogged !== null ? `${daysSinceLastLogged} dage` : ''
     ].filter(Boolean).join(' &nbsp;·&nbsp; ');
     card.innerHTML = `
       <div class="ex-card-info">
