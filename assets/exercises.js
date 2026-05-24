@@ -11,7 +11,7 @@ import { getPersonalRecord, checkPR, getProgressionHint, isStagnant, renderLog }
 import { startRestTimer } from './timer.js';
 
 function toUtcMidnightTs(dateStr) {
-  if (!dateStr) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))) return null;
   const [year, month, day] = dateStr.split('-').map(Number);
   if (!year || !month || !day) return null;
   return Date.UTC(year, month - 1, day);
@@ -99,9 +99,11 @@ export function renderHome() {
     const stagnant = isStagnant(ex.exercise);
     const progressHint = getProgressionHint(ex);
     const latestTs = latestByExercise[ex.exercise];
-    const daysSinceLastLogged = latestTs !== undefined
-      ? Math.max(0, Math.floor((todayMidnightMs - latestTs) / MS_PER_DAY))
-      : null;
+    let daysSinceLastLogged = null;
+    if (latestTs !== undefined) {
+      const diffDays = Math.floor((todayMidnightMs - latestTs) / MS_PER_DAY);
+      daysSinceLastLogged = diffDays < 0 ? 0 : diffDays;
+    }
     const card = document.createElement('div');
     card.className = 'ex-card' + (ex.completed === 'yes' ? ' done' : '');
     const typeAccent = { Push: '#3b82f6', Pull: '#10b981', Leg: '#f59e0b', Core: '#a78bfa' };
