@@ -79,7 +79,8 @@ export function renderHome() {
     return a.exercise.localeCompare(b.exercise);
   });
 
-  const todayMidnightMs = new Date().setHours(0, 0, 0, 0);
+  const now = new Date();
+  const todayMidnightMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const latestByExercise = {};
   for (const entry of logEntries) {
     if (!entry?.exercise) continue;
