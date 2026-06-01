@@ -71,7 +71,7 @@ function finishRestTimer(onDone, notifyUser = document.visibilityState === 'visi
 
   const overlay = document.getElementById('rest-timer-overlay');
   if (notifyUser) {
-    beep();
+    if (cfg.timerSound !== false) beep();
     if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 400]);
     setTimeout(() => {
       overlay.classList.remove('show');

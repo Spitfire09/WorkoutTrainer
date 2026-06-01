@@ -263,6 +263,10 @@
       <label>Pause-timer varighed (sekunder)</label>
       <input type="number" id="cfg-rest-duration" value="90" min="10" max="600" step="5" />
     </div>
+    <div class="form-group" style="flex-direction:row;align-items:center;gap:10px">
+      <input type="checkbox" id="cfg-timer-sound" style="width:auto;margin:0" />
+      <label for="cfg-timer-sound" style="margin:0">Afspil lyd når timeren løber ud</label>
+    </div>
     <button class="btn btn-primary btn-full" id="btn-save-settings">💾 Gem indstillinger</button>
     <button class="btn btn-ghost btn-full" id="btn-test-conn" style="margin-top:6px">🔗 Test Google Sheet forbindelse</button>
     <div id="conn-status"></div>
