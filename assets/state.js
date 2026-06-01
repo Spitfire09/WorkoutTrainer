@@ -44,6 +44,7 @@ export function load() {
   cfg.url          = cfg.url    || DEFAULTS.cfg.url;
   cfg.secret       = cfg.secret || DEFAULTS.cfg.secret;
   cfg.restDuration = cfg.restDuration ?? DEFAULTS.cfg.restDuration;
+  cfg.timerSound   = cfg.timerSound   ?? DEFAULTS.cfg.timerSound;
 }
 
 export function saveCfg() {

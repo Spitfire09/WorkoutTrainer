@@ -54,7 +54,8 @@ export const LOG_DEFAULTS = Object.freeze({
 export const CFG_DEFAULTS = Object.freeze({
   url: '',
   secret: '',
-  restDuration: 90
+  restDuration: 90,
+  timerSound: true
 });
 
 export const DEFAULTS = Object.freeze({

@@ -17,6 +17,7 @@ function loadSettings() {
   document.getElementById('cfg-url').value          = cfg.url          || '';
   document.getElementById('cfg-secret').value       = cfg.secret       || '';
   document.getElementById('cfg-rest-duration').value = cfg.restDuration ?? 90;
+  document.getElementById('cfg-timer-sound').checked = cfg.timerSound  ?? true;
   loadChangelog();
 }
 
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cfg.url          = document.getElementById('cfg-url').value.trim();
     cfg.secret       = document.getElementById('cfg-secret').value;
     cfg.restDuration = Number(document.getElementById('cfg-rest-duration').value) || 90;
+    cfg.timerSound   = document.getElementById('cfg-timer-sound').checked;
     saveCfg();
     const el = document.getElementById('conn-status');
     el.className = ''; el.textContent = '';
