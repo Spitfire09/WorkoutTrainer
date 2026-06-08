@@ -257,6 +257,7 @@ export async function saveNewExercise() {
 // ══════════════════════════════════════════════════════════════════
 export async function newDay() {
   if (!confirm('Ny dag — nulstil alle afsluttede øvelser?\nAfsluttet ← nej')) return;
+  clearAllQuickProgress();
   let reset = 0;
   exercises.forEach(ex => {
     if (ex.completed === 'yes') {
@@ -288,6 +289,7 @@ export async function deleteExercise() {
   if (!currentEx) return;
   if (!confirm('Slet øvelsen "' + currentEx.exercise + '"?')) return;
   const id = currentEx.entryId;
+  clearQuickProgressSet(currentEx);
   setExercises(exercises.filter(e => e.entryId !== id));
   save();
   if (cfg.url) {
@@ -305,10 +307,48 @@ export async function deleteExercise() {
 let currentQuickEx = null;
 let quickSetCurrent = 1;
 let quickSetLogged  = [];
+const QUICK_PROGRESS_KEY = 'wt_quick_progress';
+let quickProgress = {};
+
+try {
+  quickProgress = JSON.parse(localStorage.getItem(QUICK_PROGRESS_KEY) || '{}') || {};
+} catch (_) {
+  quickProgress = {};
+}
+
+function saveQuickProgress() {
+  localStorage.setItem(QUICK_PROGRESS_KEY, JSON.stringify(quickProgress));
+}
+
+function getQuickProgressSet(ex) {
+  if (!ex?.entryId || ex.completed === 'yes') return 1;
+  const total = ex.set || 3;
+  const next = Number(quickProgress[ex.entryId]) || 1;
+  return Math.max(1, Math.min(total, next));
+}
+
+function setQuickProgressSet(ex, setNumber) {
+  if (!ex?.entryId) return;
+  const total = ex.set || 3;
+  const clamped = Math.max(1, Math.min(total, Number(setNumber) || 1));
+  quickProgress[ex.entryId] = clamped;
+  saveQuickProgress();
+}
+
+function clearQuickProgressSet(ex) {
+  if (!ex?.entryId) return;
+  delete quickProgress[ex.entryId];
+  saveQuickProgress();
+}
+
+function clearAllQuickProgress() {
+  quickProgress = {};
+  saveQuickProgress();
+}
 
 export function openQuickPanel(ex) {
   currentQuickEx = ex;
-  quickSetCurrent = 1;
+  quickSetCurrent = getQuickProgressSet(ex);
   quickSetLogged  = [];
   document.getElementById('qp-title').textContent  = ex.exercise || '';
   document.getElementById('qp-weight').value = ex.todayWeight ?? ex.lastWeight ?? 0;
@@ -361,6 +401,7 @@ export async function quickDone() {
   ex.todayReps   = todayReps;
   ex.completed   = 'yes';
   ex.lastCompletedDate = completedDate;
+  clearQuickProgressSet(ex);
 
   const logEntry = {
     ...createLogEntry(ex, { todayWeight, todayReps, date: `${completedDate} ${isoTime()}` }),
@@ -413,12 +454,14 @@ export async function quickLogSet() {
     ex.todayReps   = todayReps;
     ex.completed   = 'yes';
     ex.lastCompletedDate = isoDate();
+    clearQuickProgressSet(ex);
     save();
     closeQuickPanel();
     renderHome();
     if (isNewPR) toast('🏆 NY PR! ' + todayWeight + ' kg — alle ' + total + ' sæt klaret!', 3500);
     else toast('✅ ' + ex.exercise + ' afsluttet (' + total + ' sæt)!');
   } else {
+    setQuickProgressSet(ex, quickSetCurrent);
     updateQPSetUI();
     if (isNewPR) toast('🏆 NY PR på sæt ' + setNumber + '! ' + todayWeight + ' kg', 3000);
     else toast('📝 Sæt ' + setNumber + '/' + total + ' logget');
