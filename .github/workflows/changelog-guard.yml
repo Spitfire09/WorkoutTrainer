@@ -1,0 +1,46 @@
+name: Changelog guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  require-changelog-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require CHANGELOG update for app changes
+        run: |
+          set -euo pipefail
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          APP_CHANGED=0
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            if [[ "$file" =~ ^assets/ ]] || [[ "$file" == "index.html" ]] || [[ "$file" == "sw.js" ]] || [[ "$file" == "manifest.json" ]] || [[ "$file" =~ ^GoogleSheet/ ]]; then
+              APP_CHANGED=1
+              break
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [[ "$APP_CHANGED" -eq 0 ]]; then
+            echo "No app files changed. Skipping changelog requirement."
+            exit 0
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qx "CHANGELOG.json"; then
+            echo "CHANGELOG.json updated."
+            exit 0
+          fi
+
+          echo "::error::App files changed, but CHANGELOG.json was not updated."
+          exit 1

@@ -41,6 +41,16 @@ export function load() {
   try { exercises  = JSON.parse(localStorage.getItem(DB_KEY_EXERCISES) || '[]'); } catch(e){}
   try { logEntries = JSON.parse(localStorage.getItem(DB_KEY_LOG)       || '[]'); } catch(e){}
   try { cfg        = JSON.parse(localStorage.getItem(DB_KEY_CFG)       || '{}'); } catch(e){}
+  let migratedExercises = false;
+  exercises.forEach(ex => {
+    if (!ex.entryId) {
+      ex.entryId = uid();
+      migratedExercises = true;
+    }
+  });
+  if (migratedExercises) {
+    localStorage.setItem(DB_KEY_EXERCISES, JSON.stringify(exercises));
+  }
   cfg.url          = cfg.url    || DEFAULTS.cfg.url;
   cfg.secret       = cfg.secret || DEFAULTS.cfg.secret;
   cfg.restDuration = cfg.restDuration ?? DEFAULTS.cfg.restDuration;

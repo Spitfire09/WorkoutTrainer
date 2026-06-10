@@ -2,7 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import {
   isoDate, isoTime, sortDayValues, esc, uid,
   deriveDateOnly, normalizeTimeOnly, logEntrySortValue, linReg,
-  createLogEntry
+  createLogEntry, load, exercises, DB_KEY_EXERCISES, DB_KEY_LOG, DB_KEY_CFG
 } from '../assets/state.js';
 import { DEFAULTS } from '../assets/schema.js';
 
@@ -148,5 +148,27 @@ describe('createLogEntry', () => {
     expect(entry.muscleGroup).toBe('Chest');
     expect(entry.date).toBe('2024-03-15 10:30');
     expect(entry.entryId).toBeDefined();
+  });
+});
+
+describe('load', () => {
+  test('migrates exercises without entryId', () => {
+    localStorage.setItem(DB_KEY_EXERCISES, JSON.stringify([
+      { exercise: 'Squat', completed: 'no' },
+      { exercise: 'Bench Press', entryId: 'existing-id', completed: 'no' }
+    ]));
+    localStorage.setItem(DB_KEY_LOG, '[]');
+    localStorage.setItem(DB_KEY_CFG, '{}');
+
+    load();
+
+    expect(exercises).toHaveLength(2);
+    expect(exercises[0].entryId).toBeDefined();
+    expect(exercises[0].entryId).not.toBe('');
+    expect(exercises[1].entryId).toBe('existing-id');
+
+    const persisted = JSON.parse(localStorage.getItem(DB_KEY_EXERCISES));
+    expect(persisted[0].entryId).toBeDefined();
+    expect(persisted[1].entryId).toBe('existing-id');
   });
 });

@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.8.2",
+    "description": "Quick Panel husker nu igangværende sæt stabilt (også for ældre øvelser uden entryId). Tilføjet workflow, der kræver opdatering af CHANGELOG.json ved app-ændringer i PRs.",
+    "date": "2026-06-10",
+    "timestamp": "2026-06-10T15:45:00Z"
+  },
+  {
     "version": "1.8.1",
     "description": "Tilføjet manglende seneste ændring i changelog/versionshistorik. Tekst i øvelseskort viser nu kun antal dage (ikke 'dage siden').",
     "date": "2026-05-24",
