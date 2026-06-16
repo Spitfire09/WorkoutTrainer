@@ -1,6 +1,6 @@
 'use strict';
 
-import { exercises, logEntries, esc, sortDayValues, deriveDateOnly, MS_PER_HOUR, linReg } from './state.js';
+import { exercises, logEntries, esc, sortDayValues, deriveDateOnly, MS_PER_HOUR, linReg, logEntrySortValue } from './state.js';
 import { getProgressionHint, isStagnant } from './log.js';
 import { showScreen } from './ui.js';
 
@@ -87,7 +87,9 @@ export function renderChart() {
       <div class="stat-card-value" style="font-size:16px">${lastVol.toFixed(0)} kg</div>
     </div>`;
 
-  recentEl.innerHTML = entries.slice(0, 8).map(e => `
+  recentEl.innerHTML = [...entries]
+    .sort((a, b) => logEntrySortValue(b) - logEntrySortValue(a))
+    .slice(0, 8).map(e => `
     <div class="log-card" style="margin-bottom:6px">
       <div class="log-card-info">
         <h3 style="font-size:13px">${esc(deriveDateOnly(e.date))} ${e.isPR ? '<span class="badge-pr">🏆 PR</span>' : ''}</h3>
