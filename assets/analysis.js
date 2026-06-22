@@ -1,7 +1,7 @@
 'use strict';
 
 import { exercises, logEntries, esc, sortDayValues, deriveDateOnly, MS_PER_HOUR, linReg, logEntrySortValue } from './state.js';
-import { getProgressionHint, isStagnant } from './log.js';
+import { getProgressionHint, getPerformanceScore, getBestPerformance, isStagnant } from './log.js';
 import { showScreen } from './ui.js';
 
 // ══════════════════════════════════════════════════════════════════
@@ -29,7 +29,7 @@ export function renderChart() {
   const byDate = {};
   entries.forEach(e => {
     const d = deriveDateOnly(e.date);
-    if (!byDate[d] || e.todayWeight > byDate[d].weight) {
+    if (!byDate[d] || getPerformanceScore(e.todayWeight, e.todayReps) > getPerformanceScore(byDate[d].weight, byDate[d].reps)) {
       byDate[d] = { date: d, weight: e.todayWeight, reps: e.todayReps, isPR: !!e.isPR };
     }
   });
@@ -46,8 +46,11 @@ export function renderChart() {
 
   const maxW  = Math.max(...data.map(d => d.weight));
   const lastW = data[data.length - 1].weight;
-  const diff  = +(lastW - data[0].weight).toFixed(1);
-  const diffColor = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+  const bestPerf = getBestPerformance(name);
+  const firstScore = getPerformanceScore(data[0].weight, data[0].reps);
+  const lastScore = getPerformanceScore(lastW, data[data.length - 1].reps);
+  const diffScore = +(lastScore - firstScore).toFixed(1);
+  const diffColor = diffScore >= 0 ? 'var(--success)' : 'var(--danger)';
 
   const best1RM = entries.reduce((best, e) => {
     if (!e.todayWeight || !e.todayReps) return best;
@@ -63,16 +66,16 @@ export function renderChart() {
 
   statsEl.innerHTML = `
     <div class="stat-card">
-      <div class="stat-card-label">Bedste (PR)</div>
-      <div class="stat-card-value" style="color:var(--accent2)">${maxW} kg</div>
+      <div class="stat-card-label">Bedste PR</div>
+      <div class="stat-card-value" style="color:var(--accent2)">${bestPerf ? `${bestPerf.todayWeight} kg × ${bestPerf.todayReps} reps` : `${maxW} kg`}</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Seneste</div>
-      <div class="stat-card-value">${lastW} kg</div>
+      <div class="stat-card-value">${lastW} kg × ${data[data.length - 1].reps} reps</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Fremgang</div>
-      <div class="stat-card-value" style="color:${diffColor}">${diff >= 0 ? '+' : ''}${diff} kg</div>
+      <div class="stat-card-value" style="color:${diffColor}">${diffScore >= 0 ? '+' : ''}${diffScore} est. 1RM</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Est. 1RM</div>
@@ -227,11 +230,15 @@ export function renderAnalyse() {
         .sort((a, b) => a._d.localeCompare(b._d))
         .map(({ e }) => e);
       if (!exEntries.length) return;
-      const maxW  = Math.max(...exEntries.map(e => e.todayWeight));
-      const lastW = exEntries[exEntries.length - 1].todayWeight;
-      const firstW = exEntries[0].todayWeight;
-      const diff  = +(lastW - firstW).toFixed(1);
-      const diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
+      const bestPerf = exEntries
+        .map(e => ({ e, score: getPerformanceScore(e.todayWeight, e.todayReps) }))
+        .sort((a, b) => b.score - a.score || b.e.todayWeight - a.e.todayWeight || b.e.todayReps - a.e.todayReps || logEntrySortValue(b.e) - logEntrySortValue(a.e))[0];
+      const lastEntry = exEntries[exEntries.length - 1];
+      const firstEntry = exEntries[0];
+      const firstScore = getPerformanceScore(firstEntry.todayWeight, firstEntry.todayReps);
+      const lastScore = getPerformanceScore(lastEntry.todayWeight, lastEntry.todayReps);
+      const diffScore = +(lastScore - firstScore).toFixed(1);
+      const diffStr = diffScore >= 0 ? `+${diffScore}` : `${diffScore}`;
       const stagnant = isStagnant(ex.exercise);
       const hint = getProgressionHint(ex);
       let badge = '';
@@ -239,7 +246,7 @@ export function renderAnalyse() {
       else if (stagnant)  badge = `<span class="badge-stagnant">⏸ Stagnation</span>`;
       html += `<div class="analyse-row">
         <span class="analyse-row-label">${esc(ex.exercise)}</span>
-        <span class="analyse-row-value">${lastW} kg &nbsp;·&nbsp; PR: ${maxW} kg &nbsp;·&nbsp; ${diffStr} kg totalt</span>
+        <span class="analyse-row-value">${lastEntry.todayWeight} kg × ${lastEntry.todayReps} reps &nbsp;·&nbsp; PR: ${bestPerf.e.todayWeight} kg × ${bestPerf.e.todayReps} reps &nbsp;·&nbsp; ${diffStr} est. 1RM</span>
         <span class="analyse-row-badge">${badge}</span>
       </div>`;
     });
