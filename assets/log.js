@@ -19,9 +19,36 @@ export function getPersonalRecord(exerciseName) {
   return vals.length ? Math.max(...vals) : 0;
 }
 
-export function checkPR(exerciseName, weight) {
-  if (!weight || weight <= 0) return false;
-  return weight > getPersonalRecord(exerciseName);
+export function getPerformanceScore(weight, reps) {
+  const safeWeight = Number(weight) || 0;
+  const safeReps = Number(reps) || 0;
+  if (safeWeight <= 0) return 0;
+  return +(safeWeight * (1 + safeReps / 30)).toFixed(1);
+}
+
+export function getBestPerformance(exerciseName) {
+  return logEntries
+    .filter(e => e.exercise === exerciseName && e.todayWeight > 0)
+    .map(e => ({
+      entry: e,
+      score: getPerformanceScore(e.todayWeight, e.todayReps),
+      date: deriveDateOnly(e.date) || ''
+    }))
+    .filter(item => item.score > 0)
+    .sort((a, b) =>
+      b.score - a.score ||
+      b.entry.todayWeight - a.entry.todayWeight ||
+      b.entry.todayReps - a.entry.todayReps ||
+      logEntrySortValue(b.entry) - logEntrySortValue(a.entry)
+    )[0]?.entry || null;
+}
+
+export function checkPR(exerciseName, weight, reps = 0) {
+  const score = getPerformanceScore(weight, reps);
+  if (!score) return false;
+  const best = getBestPerformance(exerciseName);
+  if (!best) return true;
+  return score > getPerformanceScore(best.todayWeight, best.todayReps);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -33,7 +60,7 @@ export function getProgressionHint(ex) {
     .filter(e => e.exercise === ex.exercise && e.todayWeight > 0 && deriveDateOnly(e.date))
     .forEach(e => {
       const d = deriveDateOnly(e.date);
-      if (!byDate[d] || e.todayWeight > byDate[d].weight) {
+      if (!byDate[d] || getPerformanceScore(e.todayWeight, e.todayReps) > getPerformanceScore(byDate[d].weight, byDate[d].reps)) {
         byDate[d] = { weight: e.todayWeight, reps: e.todayReps || 0 };
       }
     });
@@ -41,20 +68,16 @@ export function getProgressionHint(ex) {
     .sort((a, b) => b[0].localeCompare(a[0]))
     .slice(0, PROGRESSION_STREAK);
   if (sessions.length < PROGRESSION_STREAK) return null;
+  const targetScore = getPerformanceScore(ex.lastWeight, ex.lastReps);
   const allMet = sessions.every(([, s]) =>
-    s.weight >= ex.lastWeight && s.reps >= ex.lastReps
+    getPerformanceScore(s.weight, s.reps) >= targetScore
   );
   if (!allMet) return null;
   return +(ex.lastWeight + PROGRESSION_INCREMENT).toFixed(1);
 }
 
 export function isStagnant(exName) {
-  const entries = logEntries.filter(e => e.exercise === exName && e.todayWeight > 0);
-  if (entries.length < 4) return false;
-  const maxWeight = Math.max(...entries.map(e => e.todayWeight));
-  const prEntry = entries
-    .sort((a, b) => (deriveDateOnly(b.date) || '').localeCompare(deriveDateOnly(a.date) || ''))
-    .find(e => e.todayWeight >= maxWeight);
+  const prEntry = getBestPerformance(exName);
   if (!prEntry) return false;
   const prDate = deriveDateOnly(prEntry.date);
   if (!prDate) return false;

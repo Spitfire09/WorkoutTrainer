@@ -7,7 +7,7 @@ import {
 } from './state.js';
 import { api, apiFetch } from './api.js';
 import { toast, spinner, showScreen } from './ui.js';
-import { getPersonalRecord, checkPR, getProgressionHint, isStagnant, renderLog } from './log.js';
+import { checkPR, getProgressionHint, isStagnant, renderLog } from './log.js';
 import { startRestTimer } from './timer.js';
 
 function toUtcMidnightTs(dateStr) {
@@ -94,8 +94,7 @@ export function renderHome() {
   }
 
   sorted.forEach(ex => {
-    const pr = getPersonalRecord(ex.exercise);
-    const isPrEx = pr > 0 && ex.todayWeight >= pr && ex.completed === 'yes';
+    const isPrEx = ex.completed === 'yes' && checkPR(ex.exercise, ex.todayWeight, ex.todayReps);
     const stagnant = isStagnant(ex.exercise);
     const progressHint = getProgressionHint(ex);
     const latestTs = latestByExercise[ex.exercise];
