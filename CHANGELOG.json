@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.9.0",
+    "description": "Øvelser kan nu markeres som inaktive. Tilføjet 'Aktiv øvelse'-toggle i detaljer og aktivitetsfilter i oversigten (standard: kun aktive øvelser vises).",
+    "date": "2026-06-23",
+    "timestamp": "2026-06-23T06:28:43Z"
+  },
+  {
     "version": "1.8.3",
     "description": "Seneste poster i øvelsesdetalje/fremgangsvisning vises nu korrekt og sorteres med nyeste post øverst.",
     "date": "2026-06-16",

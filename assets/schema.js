@@ -31,6 +31,7 @@ export const EXERCISE_DEFAULTS = Object.freeze({
   lastCompletedDate: '',
   description: '',
   rpe: null,
+  active: true,
   synced: false
 });
 
