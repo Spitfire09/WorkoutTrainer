@@ -39,7 +39,7 @@ const SHEET_LOG       = 'Log';
 const EXERCISE_HEADERS = [
   'EntryID', 'ID', 'Date', 'Type', 'Category', 'Day',
   'Exercise', 'LastWeight', 'TodayWeight', 'LastReps', 'TodayReps',
-  'Set', 'Completed', 'LastCompletedDate', 'Description', 'RPE', 'MuscleGroup'
+  'Set', 'Completed', 'LastCompletedDate', 'Description', 'RPE', 'MuscleGroup', 'Active'
 ];
 
 const LOG_HEADERS = [
@@ -208,6 +208,7 @@ function doGet(e) {
         description:       String(r.Description || ''),
         rpe:               r.RPE !== '' ? Number(r.RPE) : null,
         muscleGroup:       String(r.MuscleGroup || ''),
+        active:            r.Active !== '' ? r.Active !== false && r.Active !== 'false' && r.Active !== 'FALSE' : true,
         synced:            true
       }));
       return _ok({ exercises });
@@ -332,7 +333,8 @@ function doPost(e) {
         ex.lastCompletedDate|| now,
         ex.description      || '',
         ex.rpe              !== undefined ? ex.rpe         : '',
-        ex.muscleGroup      || ex.MuscleGroup || ''
+        ex.muscleGroup      || ex.MuscleGroup || '',
+        ex.active           !== undefined ? ex.active      : true
       ];
       sheet.appendRow(row);
       return _ok({ entryId });

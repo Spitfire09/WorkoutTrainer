@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.9.1",
+    "description": "Rettet: 'Active'-feltet manglede i EXERCISE_HEADERS i Apps Script, så Google Sheet nu korrekt gemmer og returnerer aktiv/inaktiv status for øvelser.",
+    "date": "2026-06-23",
+    "timestamp": "2026-06-23T09:20:00Z"
+  },
+  {
     "version": "1.9.0",
     "description": "Øvelser kan nu markeres som inaktive. Tilføjet 'Aktiv øvelse'-toggle i detaljer og aktivitetsfilter i oversigten (standard: kun aktive øvelser vises).",
     "date": "2026-06-23",
