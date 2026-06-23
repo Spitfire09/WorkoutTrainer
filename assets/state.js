@@ -47,6 +47,10 @@ export function load() {
       ex.entryId = uid();
       migratedExercises = true;
     }
+    if (ex.active === undefined) {
+      ex.active = true;
+      migratedExercises = true;
+    }
   });
   if (migratedExercises) {
     localStorage.setItem(DB_KEY_EXERCISES, JSON.stringify(exercises));

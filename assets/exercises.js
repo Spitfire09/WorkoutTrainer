@@ -53,12 +53,15 @@ export function renderHome() {
   const dayFilter      = document.getElementById('sel-day').value;
   const categoryFilter = document.getElementById('sel-category').value;
   const muscleFilter   = document.getElementById('sel-muscle').value;
+  const activeFilter   = document.getElementById('sel-active').value;
 
   let filtered = exercises;
   if (typeFilter)     filtered = filtered.filter(e => e.type === typeFilter);
   if (dayFilter)      filtered = filtered.filter(e => String(e.day) === dayFilter);
   if (categoryFilter) filtered = filtered.filter(e => e.category === categoryFilter);
   if (muscleFilter)   filtered = filtered.filter(e => e.muscleGroup === muscleFilter);
+  if (activeFilter === 'active')   filtered = filtered.filter(e => e.active !== false);
+  else if (activeFilter === 'inactive') filtered = filtered.filter(e => e.active === false);
 
   const done  = filtered.filter(e => e.completed === 'yes').length;
   const total = filtered.length;
@@ -148,6 +151,7 @@ export function openDetails(ex) {
   document.getElementById('det-lastreps').value    = ex.lastReps         ?? 0;
   document.getElementById('det-todayreps').value   = ex.todayReps        ?? ex.lastReps ?? 0;
   document.getElementById('det-description').value = ex.description      || '';
+  document.getElementById('det-active').checked    = ex.active !== false;
   if (ex.completed === 'yes' && ex.todayWeight > 0 && ex.todayWeight >= (ex.lastWeight ?? 0)) {
     document.getElementById('det-lastweight').value = ex.todayWeight;
   }
@@ -178,6 +182,7 @@ export async function saveDetails() {
   ex.todayWeight = Number(document.getElementById('det-todayweight').value) || 0;
   ex.todayReps   = Number(document.getElementById('det-todayreps').value)   || 0;
   ex.description = document.getElementById('det-description').value.trim();
+  ex.active      = document.getElementById('det-active').checked;
   save();
 
   if (cfg.url) {
@@ -190,7 +195,7 @@ export async function saveDetails() {
                   Day: ex.day, Set: ex.set, RPE: ex.rpe || '',
                   TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
                   LastWeight: ex.lastWeight, LastReps: ex.lastReps,
-                  Description: ex.description } });
+                  Description: ex.description, Active: ex.active } });
       ex.synced = true; save();
     } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
     spinner(false);
