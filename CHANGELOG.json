@@ -1,5 +1,11 @@
 [
   {
+    "version": "1.9.2",
+    "description": "Pause-timer fortsætter nu i minus efter 0, så ekstra pausetid vises. Efter udløb skifter knappen fra rød \"Spring over\" til grøn \"Fortsæt\".",
+    "date": "2026-06-24",
+    "timestamp": "2026-06-24T14:12:00Z"
+  },
+  {
     "version": "1.9.1",
     "description": "Rettet: 'Active'-feltet manglede i EXERCISE_HEADERS i Apps Script, så Google Sheet nu korrekt gemmer og returnerer aktiv/inaktiv status for øvelser.",
     "date": "2026-06-23",

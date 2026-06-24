@@ -9,6 +9,8 @@ let restTimerInterval  = null;
 let restTimerRemaining = 0;
 let restTimerTotal     = 90;
 let restTimerEndAt     = 0;
+let restTimerOnDone    = null;
+let restTimerNotified  = false;
 const TIMER_RING_RADIUS    = 88;
 const RING_CIRCUMFERENCE   = 2 * Math.PI * TIMER_RING_RADIUS;
 const MAX_REST_DURATION    = 600;
@@ -47,48 +49,56 @@ function clearRestTimerState() {
 
 function getRestTimerRemaining(now = Date.now()) {
   if (!restTimerEndAt) return 0;
-  return Math.max(0, Math.ceil((restTimerEndAt - now) / 1000));
+  return Math.ceil((restTimerEndAt - now) / 1000);
+}
+
+function updateRestTimerActionBtn(remaining) {
+  const actionBtn = document.getElementById('btn-timer-skip');
+  const isOvertime = remaining <= 0;
+  actionBtn.textContent = isOvertime ? 'Fortsæt ›' : 'Spring over ›';
+  actionBtn.classList.toggle('btn-danger', !isOvertime);
+  actionBtn.classList.toggle('btn-success', isOvertime);
 }
 
 function updateRestTimerUI(remaining = getRestTimerRemaining()) {
   const ringFg = document.getElementById('timer-ring-fg');
   const timeEl = document.getElementById('timer-time');
   const safeTotal = Math.max(restTimerTotal, 1);
-  const clampedRemaining = Math.max(0, remaining);
+  const clampedRemaining = Math.max(0, Math.min(safeTotal, remaining));
   const progress = clampedRemaining / safeTotal;
 
-  timeEl.textContent = clampedRemaining;
+  timeEl.textContent = remaining;
   ringFg.style.strokeDasharray = RING_CIRCUMFERENCE;
   ringFg.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
+  updateRestTimerActionBtn(remaining);
 }
 
-function finishRestTimer(onDone, notifyUser = document.visibilityState === 'visible') {
+function completeRestTimer() {
   clearInterval(restTimerInterval);
   restTimerInterval = null;
   restTimerRemaining = 0;
+  restTimerNotified = false;
   clearRestTimerState();
   updateRestTimerUI(0);
+  document.getElementById('rest-timer-overlay').classList.remove('show');
+  if (typeof restTimerOnDone === 'function') restTimerOnDone();
+  restTimerOnDone = null;
+}
 
-  const overlay = document.getElementById('rest-timer-overlay');
-  if (notifyUser) {
-    if (cfg.timerSound !== false) beep();
-    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 400]);
-    setTimeout(() => {
-      overlay.classList.remove('show');
-      if (typeof onDone === 'function') onDone();
-    }, 1200);
-    return;
-  }
-
-  overlay.classList.remove('show');
-  if (typeof onDone === 'function') onDone();
+function notifyRestTimerFinished() {
+  if (restTimerNotified) return;
+  restTimerNotified = true;
+  if (document.visibilityState !== 'visible') return;
+  if (cfg.timerSound !== false) beep();
+  if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 400]);
 }
 
 export function syncRestTimer(onDone) {
   if (!restTimerEndAt) return;
+  if (typeof onDone === 'function') restTimerOnDone = onDone;
   restTimerRemaining = getRestTimerRemaining();
   updateRestTimerUI(restTimerRemaining);
-  if (restTimerRemaining <= 0) finishRestTimer(onDone);
+  if (restTimerRemaining <= 0) notifyRestTimerFinished();
 }
 
 export function startRestTimer(seconds, onDone) {
@@ -96,6 +106,8 @@ export function startRestTimer(seconds, onDone) {
   restTimerTotal     = seconds;
   restTimerEndAt     = Date.now() + (seconds * 1000);
   restTimerRemaining = seconds;
+  restTimerNotified  = false;
+  restTimerOnDone    = typeof onDone === 'function' ? onDone : null;
   saveRestTimerState();
 
   const overlay = document.getElementById('rest-timer-overlay');
@@ -106,11 +118,7 @@ export function startRestTimer(seconds, onDone) {
 }
 
 export function skipRestTimer() {
-  clearInterval(restTimerInterval);
-  restTimerInterval = null;
-  restTimerRemaining = 0;
-  clearRestTimerState();
-  document.getElementById('rest-timer-overlay').classList.remove('show');
+  completeRestTimer();
 }
 
 export function addRestTime(extraSeconds) {
@@ -133,14 +141,12 @@ export function restoreRestTimer() {
     clearRestTimerState();
     return;
   }
-
-  if (getRestTimerRemaining() <= 0) {
-    finishRestTimer(null, false);
-    return;
-  }
+  restTimerNotified = false;
+  restTimerOnDone = null;
 
   document.getElementById('rest-timer-overlay').classList.add('show');
   syncRestTimer();
+  if (getRestTimerRemaining() <= 0) notifyRestTimerFinished();
   clearInterval(restTimerInterval);
   restTimerInterval = setInterval(() => syncRestTimer(), 1000);
 }
