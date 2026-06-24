@@ -22,13 +22,13 @@ export function getPersonalRecord(exerciseName) {
 export function getPerformanceScore(weight, reps) {
   const safeWeight = Number(weight) || 0;
   const safeReps = Number(reps) || 0;
-  if (safeWeight <= 0) return 0;
+  if (safeWeight <= 0) return safeReps > 0 ? safeReps : 0;
   return +(safeWeight * (1 + safeReps / 30)).toFixed(1);
 }
 
 export function getBestPerformance(exerciseName) {
   return logEntries
-    .filter(e => e.exercise === exerciseName && e.todayWeight > 0)
+    .filter(e => e.exercise === exerciseName && (e.todayWeight > 0 || e.todayReps > 0))
     .map(e => ({
       entry: e,
       score: getPerformanceScore(e.todayWeight, e.todayReps),

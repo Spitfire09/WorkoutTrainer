@@ -36,3 +36,39 @@ export function showScreen(id) {
     history.pushState({ screen: id }, '');
   }
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  PR CELEBRATION POPUP
+// ══════════════════════════════════════════════════════════════════
+
+function formatPerf(weight, reps) {
+  if (weight > 0) return `${weight} kg × ${reps} reps`;
+  return `${reps} reps`;
+}
+
+export function showPRCelebration(exerciseName, prevBest, newWeight, newReps, setNumber = null, totalSets = null) {
+  const popup = document.getElementById('pr-popup');
+  if (!popup) return;
+
+  const setInfo = setNumber !== null && totalSets !== null
+    ? ` (sæt ${setNumber}/${totalSets})`
+    : '';
+
+  document.getElementById('pr-popup-exercise').textContent = exerciseName + setInfo;
+  document.getElementById('pr-popup-new').textContent = formatPerf(newWeight, newReps);
+
+  const prevEl = document.getElementById('pr-popup-prev');
+  if (prevBest) {
+    prevEl.textContent = formatPerf(prevBest.todayWeight, prevBest.todayReps);
+    document.getElementById('pr-popup-prev-row').style.display = '';
+  } else {
+    document.getElementById('pr-popup-prev-row').style.display = 'none';
+  }
+
+  popup.classList.add('show');
+}
+
+export function closePRPopup() {
+  const popup = document.getElementById('pr-popup');
+  if (popup) popup.classList.remove('show');
+}
