@@ -1,5 +1,11 @@
 [
   {
+    "version": "2.0.0",
+    "description": "Tilføjet PR-fejringspopup: viser ny og tidligere PR med øvelses- og sætinfo ved ny personlig rekord. PR-tracking virker nu korrekt for kropsvægtøvelser med 0 kg men reps. Sæt-logning sender nu reps med i PR-tjekket.",
+    "date": "2026-06-24",
+    "timestamp": "2026-06-24T14:31:40Z"
+  },
+  {
     "version": "1.9.2",
     "description": "Pause-timer fortsætter nu i minus efter 0, så ekstra pausetid vises. Efter udløb skifter knappen fra rød \"Spring over\" til grøn \"Fortsæt\".",
     "date": "2026-06-24",

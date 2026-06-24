@@ -582,3 +582,79 @@
       border-radius: 6px; padding: 2px 8px; margin: 2px 3px; color: var(--text2);
     }
     .sugg-backup-day { color: var(--muted); font-size: 11px; margin-left: 3px; }
+
+    /* ── PR Celebration Popup ──────────────────────────────────── */
+    #pr-popup {
+      position: fixed; inset: 0; z-index: 800;
+      display: none; align-items: center; justify-content: center;
+    }
+    #pr-popup.show { display: flex; }
+    #pr-popup-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(6,13,22,.85);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    #pr-popup-card {
+      position: relative; z-index: 1;
+      background: linear-gradient(160deg, #0d1825 0%, #132034 100%);
+      border: 2px solid transparent;
+      border-radius: 20px;
+      border-image: linear-gradient(135deg, #fbbf24, #f59e0b, #fbbf24) 1;
+      box-shadow: 0 0 60px rgba(251,191,36,.25), 0 8px 40px rgba(0,0,0,.6);
+      padding: 32px 28px 24px;
+      max-width: 340px; width: 90%;
+      text-align: center;
+      animation: pr-pop-in .35s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes pr-pop-in {
+      from { opacity: 0; transform: scale(.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #pr-popup-trophy {
+      font-size: 56px; line-height: 1;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 20px rgba(251,191,36,.6));
+      animation: pr-trophy-bounce .6s .15s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes pr-trophy-bounce {
+      from { transform: scale(0) rotate(-20deg); }
+      to   { transform: scale(1) rotate(0deg); }
+    }
+    #pr-popup-title {
+      font-size: 22px; font-weight: 900; letter-spacing: -.02em;
+      background: linear-gradient(90deg, #fbbf24, #f59e0b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    #pr-popup-exercise {
+      font-size: 15px; font-weight: 600; color: var(--text2);
+      margin-bottom: 18px;
+    }
+    #pr-popup-scores {
+      display: flex; gap: 10px; justify-content: center;
+      margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .pr-popup-score {
+      border-radius: var(--radius); padding: 12px 16px;
+      flex: 1; min-width: 110px;
+    }
+    .pr-popup-score-new {
+      background: rgba(251,191,36,.12);
+      border: 1px solid rgba(251,191,36,.3);
+    }
+    .pr-popup-score-prev {
+      background: rgba(100,116,139,.1);
+      border: 1px solid rgba(100,116,139,.25);
+    }
+    .pr-popup-score-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted); margin-bottom: 5px;
+    }
+    .pr-popup-score-new .pr-popup-score-label { color: #fbbf24; }
+    .pr-popup-score-value {
+      font-size: 17px; font-weight: 800; color: var(--text);
+      letter-spacing: -.02em;
+    }
+    .pr-popup-score-new .pr-popup-score-value { color: #fbbf24; }
+    #pr-popup-close { width: 100%; }

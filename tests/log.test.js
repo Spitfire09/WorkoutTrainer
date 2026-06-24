@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { setLogEntries } from '../assets/state.js';
-import { checkPR, getProgressionHint, isStagnant } from '../assets/log.js';
+import { checkPR, getProgressionHint, isStagnant, getPerformanceScore, getBestPerformance } from '../assets/log.js';
 
 describe('log performance logic', () => {
   beforeEach(() => {
@@ -45,5 +45,37 @@ describe('log performance logic', () => {
     ]);
 
     expect(isStagnant('Deadlift')).toBe(false);
+  });
+
+  test('getPerformanceScore returns reps score for 0 kg bodyweight exercises', () => {
+    expect(getPerformanceScore(0, 10)).toBe(10);
+    expect(getPerformanceScore(0, 0)).toBe(0);
+    expect(getPerformanceScore(0, 15)).toBe(15);
+  });
+
+  test('checkPR detects PR for 0 kg bodyweight exercises based on reps', () => {
+    setLogEntries([
+      { exercise: 'Pull-up', todayWeight: 0, todayReps: 8, date: '2024-01-01 10:00' }
+    ]);
+
+    expect(checkPR('Pull-up', 0, 9)).toBe(true);
+    expect(checkPR('Pull-up', 0, 8)).toBe(false);
+    expect(checkPR('Pull-up', 0, 7)).toBe(false);
+  });
+
+  test('getBestPerformance finds best for 0 kg exercises', () => {
+    setLogEntries([
+      { exercise: 'Pull-up', todayWeight: 0, todayReps: 8, date: '2024-01-01 10:00' },
+      { exercise: 'Pull-up', todayWeight: 0, todayReps: 12, date: '2024-01-02 10:00' },
+      { exercise: 'Pull-up', todayWeight: 0, todayReps: 10, date: '2024-01-03 10:00' }
+    ]);
+
+    const best = getBestPerformance('Pull-up');
+    expect(best).not.toBeNull();
+    expect(best.todayReps).toBe(12);
+  });
+
+  test('checkPR returns true on first ever log for 0 kg exercise', () => {
+    expect(checkPR('Pull-up', 0, 5)).toBe(true);
   });
 });

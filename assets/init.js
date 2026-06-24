@@ -3,7 +3,7 @@
 import { API_ACTIONS } from './schema.js';
 import { cfg, exercises, logEntries, load, save, saveCfg, esc, apiGetUrl } from './state.js';
 import { apiFetch } from './api.js';
-import { toast, showScreen } from './ui.js';
+import { toast, showScreen, closePRPopup } from './ui.js';
 import { renderHome, saveDetails, saveNewExercise, newDay, deleteExercise, closeQuickPanel, quickDone, quickLogSet, syncAll } from './exercises.js';
 import { renderLog, mergeExercises, mergeLog, readJsonFile } from './log.js';
 import { renderAnalyse, openChart } from './analysis.js';
@@ -217,6 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('qp-btn-done').addEventListener('click', quickDone);
   document.getElementById('qp-btn-log').addEventListener('click', quickLogSet);
 
+  // PR popup
+  document.getElementById('pr-popup-close').addEventListener('click', closePRPopup);
+  document.getElementById('pr-popup-backdrop').addEventListener('click', closePRPopup);
+
   // Rest timer
   document.getElementById('btn-timer-skip').addEventListener('click', skipRestTimer);
   document.getElementById('btn-timer-add').addEventListener('click', () => addRestTime(30));
@@ -237,6 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
   history.replaceState({ screen: 'screen-home' }, '');
 
   window.addEventListener('popstate', () => {
+    const prPopup = document.getElementById('pr-popup');
+    if (prPopup && prPopup.classList.contains('show')) {
+      closePRPopup();
+      return;
+    }
     const timerOverlay = document.getElementById('rest-timer-overlay');
     if (timerOverlay.classList.contains('show')) {
       skipRestTimer();

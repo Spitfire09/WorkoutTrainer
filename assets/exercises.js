@@ -6,8 +6,8 @@ import {
   save, uid, isoDate, isoTime, sortDayValues, esc, createLogEntry, apiGetUrl, deriveDateOnly, MS_PER_DAY
 } from './state.js';
 import { api, apiFetch } from './api.js';
-import { toast, spinner, showScreen } from './ui.js';
-import { checkPR, getProgressionHint, isStagnant, renderLog } from './log.js';
+import { toast, spinner, showScreen, showPRCelebration } from './ui.js';
+import { checkPR, getBestPerformance, getProgressionHint, isStagnant, renderLog } from './log.js';
 import { startRestTimer } from './timer.js';
 
 function toUtcMidnightTs(dateStr) {
@@ -399,7 +399,8 @@ export async function quickDone() {
   const todayReps     = Number(document.getElementById('qp-reps').value)   || 0;
   const completedDate = isoDate();
 
-  const isNewPR = checkPR(ex.exercise, todayWeight);
+  const prevBest = getBestPerformance(ex.exercise);
+  const isNewPR = checkPR(ex.exercise, todayWeight, todayReps);
 
   ex.todayWeight = todayWeight;
   ex.todayReps   = todayReps;
@@ -426,8 +427,11 @@ export async function quickDone() {
   }
 
   closeQuickPanel();
-  if (isNewPR) toast('🏆 NY PR! ' + ex.exercise + ' — ' + todayWeight + ' kg!', 3500);
-  else toast('✅ ' + ex.exercise + ' afsluttet!');
+  if (isNewPR) {
+    showPRCelebration(ex.exercise, prevBest, todayWeight, todayReps);
+  } else {
+    toast('✅ ' + ex.exercise + ' afsluttet!');
+  }
   renderHome();
 }
 
@@ -440,7 +444,8 @@ export async function quickLogSet() {
   const total       = ex.set || 3;
   const setNumber   = quickSetCurrent;
 
-  const isNewPR = checkPR(ex.exercise, todayWeight);
+  const isNewPR = checkPR(ex.exercise, todayWeight, todayReps);
+  const prevBest = isNewPR ? getBestPerformance(ex.exercise) : null;
 
   const logEntry = {
     ...createLogEntry(ex, { todayWeight, todayReps, set: 1, setNumber, totalSets: total }),
@@ -462,13 +467,19 @@ export async function quickLogSet() {
     save();
     closeQuickPanel();
     renderHome();
-    if (isNewPR) toast('🏆 NY PR! ' + todayWeight + ' kg — alle ' + total + ' sæt klaret!', 3500);
-    else toast('✅ ' + ex.exercise + ' afsluttet (' + total + ' sæt)!');
+    if (isNewPR) {
+      showPRCelebration(ex.exercise, prevBest, todayWeight, todayReps);
+    } else {
+      toast('✅ ' + ex.exercise + ' afsluttet (' + total + ' sæt)!');
+    }
   } else {
     setQuickProgressSet(ex, quickSetCurrent);
     updateQPSetUI();
-    if (isNewPR) toast('🏆 NY PR på sæt ' + setNumber + '! ' + todayWeight + ' kg', 3000);
-    else toast('📝 Sæt ' + setNumber + '/' + total + ' logget');
+    if (isNewPR) {
+      showPRCelebration(ex.exercise, prevBest, todayWeight, todayReps, setNumber, total);
+    } else {
+      toast('📝 Sæt ' + setNumber + '/' + total + ' logget');
+    }
   }
 
   startRestTimer(cfg.restDuration || 90, () => {});
