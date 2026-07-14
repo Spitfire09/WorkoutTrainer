@@ -162,6 +162,8 @@ export function normalizeExercise(e) {
     lastCompletedDate: e.lastCompletedDate || e.LastCompletedDate || DEFAULTS.exercise.lastCompletedDate,
     description:       e.description       || e.Description      || DEFAULTS.exercise.description,
     rpe:               e.rpe               ?? e.RPE              ?? DEFAULTS.exercise.rpe,
+    active:            e.active !== undefined ? (e.active !== false && e.active !== 'false' && e.active !== 'FALSE') : (e.Active !== undefined ? (e.Active !== false && e.Active !== 'false' && e.Active !== 'FALSE') : DEFAULTS.exercise.active),
+    exRxUrl:           e.exRxUrl           || e.ExRxUrl          || DEFAULTS.exercise.exRxUrl,
     synced:            false
   };
 }

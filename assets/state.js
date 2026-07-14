@@ -51,6 +51,10 @@ export function load() {
       ex.active = true;
       migratedExercises = true;
     }
+    if (ex.exRxUrl === undefined) {
+      ex.exRxUrl = '';
+      migratedExercises = true;
+    }
   });
   if (migratedExercises) {
     localStorage.setItem(DB_KEY_EXERCISES, JSON.stringify(exercises));
