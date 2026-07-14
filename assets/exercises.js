@@ -17,6 +17,27 @@ function toUtcMidnightTs(dateStr) {
   return Date.UTC(year, month - 1, day);
 }
 
+function normalizeExRxUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return '';
+  return `https://${trimmed.replace(/^\/+/, '')}`;
+}
+
+function applyExRxLinkState(url) {
+  const exrxLink = document.getElementById('det-exrx-link');
+  const normalizedUrl = normalizeExRxUrl(url);
+  exrxLink.href = normalizedUrl || '#';
+  exrxLink.style.opacity = normalizedUrl ? '1' : '0.35';
+  exrxLink.style.pointerEvents = normalizedUrl ? '' : 'none';
+  exrxLink.onclick = normalizedUrl ? (e) => {
+    e.preventDefault();
+    const popup = window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
+    if (!popup) window.location.assign(normalizedUrl);
+  } : (e) => e.preventDefault();
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  RENDER: HOME
 // ══════════════════════════════════════════════════════════════════
@@ -153,15 +174,10 @@ export function openDetails(ex) {
   document.getElementById('det-description').value = ex.description      || '';
   document.getElementById('det-active').checked    = ex.active !== false;
   const exrxUrl = ex.exRxUrl || '';
-  document.getElementById('det-exrxurl').value = exrxUrl;
-  const exrxLink = document.getElementById('det-exrx-link');
-  exrxLink.href = '#';
-  exrxLink.style.opacity = exrxUrl ? '1' : '0.35';
-  exrxLink.style.pointerEvents = exrxUrl ? '' : 'none';
-  exrxLink.onclick = exrxUrl ? ((url) => (e) => {
-    e.preventDefault();
-    if (/^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer');
-  })(exrxUrl) : (e) => e.preventDefault();
+  const exrxInput = document.getElementById('det-exrxurl');
+  exrxInput.value = exrxUrl;
+  exrxInput.oninput = (e) => applyExRxLinkState(e.target.value);
+  applyExRxLinkState(exrxUrl);
   if (ex.completed === 'yes' && ex.todayWeight > 0 && ex.todayWeight >= (ex.lastWeight ?? 0)) {
     document.getElementById('det-lastweight').value = ex.todayWeight;
   }

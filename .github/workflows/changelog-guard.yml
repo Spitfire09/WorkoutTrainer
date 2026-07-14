@@ -3,6 +3,9 @@ name: Changelog guard
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -19,9 +22,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          EVENT_NAME="${{ github.event_name }}"
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+            if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+              CHANGED_FILES="$(git show --pretty='' --name-only "$HEAD_SHA")"
+            else
+              CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+            fi
+          fi
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
