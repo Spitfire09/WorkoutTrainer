@@ -20,9 +20,17 @@ function toUtcMidnightTs(dateStr) {
 function normalizeExRxUrl(url) {
   const trimmed = String(url || '').trim();
   if (!trimmed) return '';
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return '';
-  return `https://${trimmed.replace(/^\/+/, '')}`;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:\/\//i.test(trimmed)) return '';
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
+  try {
+    const parsed = new URL(candidate);
+    const host = parsed.hostname.toLowerCase();
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    if (!(host === 'exrx.net' || host.endsWith('.exrx.net'))) return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
 }
 
 function applyExRxLinkState(url) {
@@ -45,7 +53,11 @@ function buildDayOptions() {
   const days = sortDayValues(new Set(exercises.map(e => String(e.day))));
   const sel = document.getElementById('sel-day');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Alle dage</option>';
+  sel.replaceChildren();
+  const allDays = document.createElement('option');
+  allDays.value = '';
+  allDays.textContent = 'Alle dage';
+  sel.appendChild(allDays);
   days.forEach(d => {
     const o = document.createElement('option');
     o.value = d; o.textContent = 'Dag ' + d;
@@ -57,7 +69,11 @@ function buildDayOptions() {
 function buildMuscleOptions() {
   const sel = document.getElementById('sel-muscle');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Alle muskler</option>';
+  sel.replaceChildren();
+  const allMuscles = document.createElement('option');
+  allMuscles.value = '';
+  allMuscles.textContent = 'Alle muskler';
+  sel.appendChild(allMuscles);
   const groups = [...new Set(exercises.map(e => e.muscleGroup).filter(Boolean))].sort();
   groups.forEach(g => {
     const o = document.createElement('option');
