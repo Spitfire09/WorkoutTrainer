@@ -32,6 +32,7 @@ export const EXERCISE_DEFAULTS = Object.freeze({
   description: '',
   rpe: null,
   active: true,
+  exRxUrl: '',
   synced: false
 });
 

@@ -17,7 +17,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-03",
       "Description": "Ab wheel rollout: teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/HipFlexors/WtAbWheelRollout"
     },
     {
       "entryId": "e5ad6c0f-2c72-4ef7-837e-4325b3cc40bf",
@@ -35,7 +36,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralSternal/WtPushup"
     },
     {
       "entryId": "19bd9b51-c560-4368-8c6b-211722f48da1",
@@ -53,7 +55,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-01",
       "Description": "Bench dips: teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Triceps/WtBenchDip"
     },
     {
       "entryId": "f7a39285-f6b8-4da2-b9ee-7e52d0a7f56a",
@@ -71,7 +74,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-29",
       "Description": "Press: skulderblade tilbage/ned; kontrolleret dybde; undgå brede greb der irriterer skulder. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralSternal/BBBenchPress"
     },
     {
       "entryId": "28eed971-4dcc-4de7-b0dc-6c6d1ebdbc82",
@@ -89,7 +93,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "The Bulgarian split squat is\na challenging unilateral, or single-leg, lower-body exercise that targets the quadriceps, glutes, hamstrings, and calves. It is performed by elevating the back foot on a bench or sturdy surface while squatting with the front leg",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Quadriceps/DBBulgarianSplitSquat"
     },
     {
       "entryId": "2dfe1d65-6a6a-4dcb-b05a-23815cbbb12c",
@@ -107,7 +112,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Bøj kroppen fremover ved CT",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/RectusAbdominis/CBCrunch"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc777",
@@ -125,7 +131,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-28",
       "Description": "Light load; rotate forearm outward keeping elbow at side; rotator cuff focus.",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": "https://exrx.net/WeightExercises/RotatorCuff/CBExternalRotation90"
     },
     {
       "entryId": "c0ec6872-e1af-4e9b-ad55-76e750480381",
@@ -143,7 +150,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Cable internal rotation (Cable tower): teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/RotatorCuff/CBInternalRotation"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc602",
@@ -161,7 +169,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "Stand side‑on; press cable out; resist rotation; steady breathing.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Obliques/CBPallofPress"
     },
     {
       "entryId": "f26452fb-4b2d-44c5-92e1-c873f76a7b78",
@@ -179,7 +188,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "Exhale as you curl the bar up toward your shoulders in a slow and controlled arc. Keep your upper arms stationary throughout the movement",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Biceps/CBCurl"
     },
     {
       "entryId": "f2cf062e-46cf-4883-8c4d-5f7a2a75ba14",
@@ -197,7 +207,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-13",
       "Description": "Samlet dumbells på bænk",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": ""
     },
     {
       "entryId": "1c67b575-7cea-4704-8bb8-87ad1023d729",
@@ -215,7 +226,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "Squat: knæ følger tæer; neutral ryg; dybde uden smerte; vægt midtfod. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Quadriceps/DBSquat"
     },
     {
       "entryId": "7b387ec1-34fe-4621-8cf8-a2405730c9c5",
@@ -233,7 +245,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Row: træk mod nederste ribben; hold neutral ryg; pause i top for bedre rygaktivering. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/BackGeneral/DBBentOverRow"
     },
     {
       "entryId": "fe00ccde-1568-4a7a-beee-3f8893bed775",
@@ -251,7 +264,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-21",
       "Description": "",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Forearms/WtFarmerWalk"
     },
     {
       "entryId": "99fb6250-6027-46e9-9296-ed13b6476e48",
@@ -269,7 +283,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-27",
       "Description": "",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Brachialis/DBHammerCurl"
     },
     {
       "entryId": "56241640-d11c-4e00-a5d0-233e73f589e7",
@@ -287,7 +302,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-29",
       "Description": "Raise: let albuebøjning; løft til skulderhøjde; langsom excentrisk. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/HipFlexors/WtHangingLegRaise"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc788",
@@ -305,7 +321,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-19",
       "Description": "Incline bench; neutral grip; press slightly up/back; avoid painful wide angles.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralClavicular/DBInclinePress"
     },
     {
       "entryId": "3c321e83-71b9-436c-99a7-b89383096000",
@@ -323,7 +340,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Curl: albuer stille; kontrolleret op; langsom sænk; undgå at svinge kroppen. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Biceps/DBInclineCurl"
     },
     {
       "entryId": "403193ba-9535-4f2c-8c43-6324357b2a9d",
@@ -341,7 +359,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-13",
       "Description": "A lateral raise is\nan isolation exercise that strengthens the shoulder muscles, specifically targeting the side—or lateral—deltoids. This movement involves lifting weights out to the side of the body until the arms are parallel to the floor",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidLateral/DBLateralRaise"
     },
     {
       "entryId": "4e7382f0-fd5e-41f6-80c7-d9aeb3284a04",
@@ -359,7 +378,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-30",
       "Description": "",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Quadriceps/LVLegExtension"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc722",
@@ -377,7 +397,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Light load; gentle extension; avoid jerks; small ROM.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Sternocleidomastoid/LVNeckExtension"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc733",
@@ -395,7 +416,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-03",
       "Description": "Light load; chin tuck; small ROM; slow tempo.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/NeckFlexors/LVNeckFlexion"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc605",
@@ -413,7 +435,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Sid/stå rank; placer hånden bag på hovedet og pres let bagud uden bevægelse (isometrisk). Hold 5–10 sek, slip kontrolleret. Meget lav belastning.",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": ""
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc604",
@@ -431,7 +454,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Sid/stå rank; placer hånden mod panden og pres let fremad uden bevægelse (isometrisk). Hold 5–10 sek, slip kontrolleret. Meget lav belastning.",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": ""
     },
     {
       "entryId": "e9728fcb-e90e-4e5b-b70a-8254dab58e87",
@@ -449,7 +473,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/CBNeutralGripLatPulldown"
     },
     {
       "entryId": "1a5ed153-3db2-4760-a545-2717a5fecce1",
@@ -467,7 +492,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-09",
       "Description": "Plank: ribben ned; spænd mave/glutes; vejrtræk roligt; begræns lændesvaj. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/RectusAbdominis/WtFrontPlank"
     },
     {
       "entryId": "98c938c4-5d48-4774-a903-4b101917f6eb",
@@ -485,7 +511,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Pull-up: skulderbredt greb; bryst mod stang; skulderblade ned/tilbage. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/WtPullup"
     },
     {
       "entryId": "7f894bef-56f4-40cd-af82-44749313f1c3",
@@ -503,7 +530,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-29",
       "Description": "Pull-up: skulderbredt greb; bryst mod stang; skulderblade ned/tilbage. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/WtPullup"
     },
     {
       "entryId": "4696ff6f-06fd-49a8-bf7a-a2042d40ffac",
@@ -521,7 +549,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Push up: teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralSternal/WtPushup"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc711",
@@ -539,7 +568,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-27",
       "Description": "Overhand grip; wrist control; hits brachialis/extensors.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Brachioradialis/BBReverseCurl"
     },
     {
       "entryId": "c06f87b0-5403-4485-a3e7-448ee94e4cc6",
@@ -557,7 +587,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidPosterior/CBFacePull"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc786",
@@ -575,7 +606,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-30",
       "Description": "Row: træk mod nederste ribben; hold neutral ryg; pause i top for bedre rygaktivering. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": ""
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc755",
@@ -593,7 +625,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-26",
       "Description": "Row to lower ribs; neutral spine; pause and squeeze shoulder blades.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/BackGeneral/LVNarrowGripSeatedRowH"
     },
     {
       "entryId": "8d30d553-0336-403a-a59b-2a34ae8291fc",
@@ -611,7 +644,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/DBSeatedShoulderPress"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc601",
@@ -629,7 +663,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Pad above heels; curl down; brief squeeze; full control.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Hamstrings/LVSeatedLegCurl"
     },
     {
       "entryId": "5e70b82a-cc5f-4906-8fa9-5dde1090fb6d",
@@ -647,7 +682,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Single-arm dumbbell overhead extension: teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Triceps/DBOneArmOverheadExtension"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc744",
@@ -665,7 +701,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-01",
       "Description": "Support on bench; pull DB toward hip; control the descent.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/BackGeneral/DBOneArmRow"
     },
     {
       "entryId": "b2778c1b-0515-4fab-9e16-2ba84195ec0b",
@@ -683,7 +720,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-04-26",
       "Description": "A split squat, also known as a static lunge, is\na unilateral (single-leg) exercise that builds lower-body strength, balance, and stability. Unlike a traditional walking lunge where you step forward or backward with each repetition, the split squat keeps your feet fixed in a staggered stance for the duration of a set. Reps er per ben. Tyspisk som supersæt med arm øvelse",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Quadriceps/WtSplitSquat"
     },
     {
       "entryId": "ede30bad-85c9-4e40-81d8-da720be7aaa8",
@@ -701,7 +739,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-29",
       "Description": "Squat: knæ følger tæer; neutral ryg; dybde uden smerte; vægt midtfod. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Quadriceps/BBSquat"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc799",
@@ -719,7 +758,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "Stå i split-stance foran kabeltårn; neutral greb; pres frem i brysthøjde mens skulderblade holdes tilbage/ned. Kontrolleret 2-1-2 tempo. Som i bænkpres",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralSternal/CBChestPress"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc603",
@@ -737,7 +777,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-09",
       "Description": "Moderate cadence; RPE ~6/10; knee‑friendly cardio.",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": ""
     },
     {
       "entryId": "57717c87-4581-4075-aad4-bcbf50b81ae9",
@@ -755,7 +796,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "Straight arm pulldown cable (Cable tower): teknisk fokus på stabil kerne, kontrolleret tempo og smertefri ROM. Udfør med kontrolleret tempo, neutral ryg og smertefri bevægebane; stop 1–2 reps før failure.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/CBStraightArmPulldown"
     },
     {
       "entryId": "ef96b4f9-9e18-4b53-befd-3060645bc7f2",
@@ -773,7 +815,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": ""
     },
     {
       "entryId": "898edb36-c80b-46c1-99c8-25e935e153f3",
@@ -791,7 +834,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-02-04",
       "Description": "y54645yy5r g5g5g g554",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Triceps/CBPulldown"
     },
     {
       "entryId": "61d7689c-5c4c-4c0b-8e04-d981f77dc766",
@@ -809,7 +853,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-13",
       "Description": "Elbows fixed; full extension if pain‑free; slow eccentric.",
-      "RPE": 8
+      "RPE": 8,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Triceps/CBRopePressdown"
     },
     {
       "entryId": "138c1aa6-741c-42a5-b036-867f5d63f7e3",
@@ -827,7 +872,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Brachialis/DBCrossbodyHammerCurl"
     },
     {
       "entryId": "914a5b7b-3389-4bc8-8673-b1fa4cb742a3",
@@ -845,7 +891,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-03-30",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BBDeadlift"
     },
     {
       "entryId": "932d2222-fbd6-47e8-b031-56a21a99b13a",
@@ -863,7 +910,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-01",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/WtPikePushup"
     },
     {
       "entryId": "4dea49aa-50fa-491f-9368-b07bf8882b23",
@@ -881,7 +929,8 @@
       "Completed": "no",
       "LastCompletedDate": "2026-01-02",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Triceps/CBOverheadExtension"
     },
     {
       "entryId": "89ade17b-03f5-4cb6-aba9-09e1ed2b148a",
@@ -899,7 +948,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-04",
       "Description": "Vægt er pr arm",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/DBShoulderPress"
     },
     {
       "entryId": "1c369eb4-3241-4d6c-bd85-9266f8e2f061",
@@ -917,7 +967,8 @@
       "Completed": "yes",
       "LastCompletedDate": "2026-04-01",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": "https://exrx.net/WeightExercises/PectoralClavicular/BBInclineBenchPress"
     },
     {
       "entryId": "501789c6-b5a5-410b-af83-b56d5f83a2d3",
@@ -935,7 +986,8 @@
       "Completed": "no",
       "LastCompletedDate": "",
       "Description": "",
-      "RPE": null
+      "RPE": null,
+      "ExRxUrl": ""
     },
     {
       "entryId": "7f76727e-eec1-4296-8ea1-f138ade3aaab",
@@ -953,7 +1005,8 @@
       "Completed": "no",
       "LastCompletedDate": "",
       "Description": "",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": ""
     },
     {
       "entryId": "dd620dac-ed90-491e-8cca-d4e444072fe9",
@@ -971,7 +1024,8 @@
       "Completed": "no",
       "LastCompletedDate": "",
       "Description": "",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/WtHandstandPushup"
     },
     {
       "entryId": "bb1499dd-8504-4b32-8ee6-14ebe8e37d4b",
@@ -989,7 +1043,8 @@
       "Completed": "no",
       "LastCompletedDate": "",
       "Description": "",
-      "RPE": 6
+      "RPE": 6,
+      "ExRxUrl": ""
     },
     {
       "entryId": "46ea584c-8f66-4ba1-b312-961b8c5e1fac",
@@ -1007,7 +1062,8 @@
       "Completed": "no",
       "LastCompletedDate": "",
       "Description": "",
-      "RPE": 7
+      "RPE": 7,
+      "ExRxUrl": "https://exrx.net/WeightExercises/Hamstrings/DBRomanianDeadlift"
     }
   ],
   "log": [

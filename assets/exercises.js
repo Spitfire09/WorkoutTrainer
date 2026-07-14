@@ -152,6 +152,16 @@ export function openDetails(ex) {
   document.getElementById('det-todayreps').value   = ex.todayReps        ?? ex.lastReps ?? 0;
   document.getElementById('det-description').value = ex.description      || '';
   document.getElementById('det-active').checked    = ex.active !== false;
+  const exrxUrl = ex.exRxUrl || '';
+  document.getElementById('det-exrxurl').value = exrxUrl;
+  const exrxLink = document.getElementById('det-exrx-link');
+  exrxLink.href = '#';
+  exrxLink.style.opacity = exrxUrl ? '1' : '0.35';
+  exrxLink.style.pointerEvents = exrxUrl ? '' : 'none';
+  exrxLink.onclick = exrxUrl ? ((url) => (e) => {
+    e.preventDefault();
+    if (/^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer');
+  })(exrxUrl) : (e) => e.preventDefault();
   if (ex.completed === 'yes' && ex.todayWeight > 0 && ex.todayWeight >= (ex.lastWeight ?? 0)) {
     document.getElementById('det-lastweight').value = ex.todayWeight;
   }
@@ -183,6 +193,7 @@ export async function saveDetails() {
   ex.todayReps   = Number(document.getElementById('det-todayreps').value)   || 0;
   ex.description = document.getElementById('det-description').value.trim();
   ex.active      = document.getElementById('det-active').checked;
+  ex.exRxUrl     = document.getElementById('det-exrxurl').value.trim();
   save();
 
   if (cfg.url) {
@@ -195,7 +206,7 @@ export async function saveDetails() {
                   Day: ex.day, Set: ex.set, RPE: ex.rpe || '',
                   TodayWeight: ex.todayWeight, TodayReps: ex.todayReps,
                   LastWeight: ex.lastWeight, LastReps: ex.lastReps,
-                  Description: ex.description, Active: ex.active } });
+                  Description: ex.description, Active: ex.active, ExRxUrl: ex.exRxUrl || '' } });
       ex.synced = true; save();
     } catch(e) { toast('⚠️ Offline – gemt lokalt'); }
     spinner(false);
@@ -231,6 +242,7 @@ export async function saveNewExercise() {
     completed:         'no',
     lastCompletedDate: isoDate(),
     description:       document.getElementById('new-description').value.trim(),
+    exRxUrl:           document.getElementById('new-exrxurl').value.trim(),
     synced:            false
   };
   exercises.push(ex);
@@ -245,7 +257,7 @@ export async function saveNewExercise() {
     spinner(false);
   }
 
-  ['new-exercise','new-day','new-rpe','new-description'].forEach(id => document.getElementById(id).value = '');
+  ['new-exercise','new-day','new-rpe','new-description','new-exrxurl'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('new-musclegroup').value = '';
   document.getElementById('new-weight').value = '0';
   document.getElementById('new-reps').value   = '10';

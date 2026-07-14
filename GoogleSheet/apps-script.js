@@ -39,7 +39,7 @@ const SHEET_LOG       = 'Log';
 const EXERCISE_HEADERS = [
   'EntryID', 'ID', 'Date', 'Type', 'Category', 'Day',
   'Exercise', 'LastWeight', 'TodayWeight', 'LastReps', 'TodayReps',
-  'Set', 'Completed', 'LastCompletedDate', 'Description', 'RPE', 'MuscleGroup', 'Active'
+  'Set', 'Completed', 'LastCompletedDate', 'Description', 'RPE', 'MuscleGroup', 'Active', 'ExRxUrl'
 ];
 
 const LOG_HEADERS = [
@@ -209,6 +209,7 @@ function doGet(e) {
         rpe:               r.RPE !== '' ? Number(r.RPE) : null,
         muscleGroup:       String(r.MuscleGroup || ''),
         active:            r.Active !== '' ? r.Active !== false && r.Active !== 'false' && r.Active !== 'FALSE' : true,
+        exRxUrl:           String(r.ExRxUrl || ''),
         synced:            true
       }));
       return _ok({ exercises });
@@ -334,7 +335,8 @@ function doPost(e) {
         ex.description      || '',
         ex.rpe              !== undefined ? ex.rpe         : '',
         ex.muscleGroup      || ex.MuscleGroup || '',
-        ex.active           !== undefined ? ex.active      : true
+        ex.active           !== undefined ? ex.active      : true,
+        ex.exRxUrl          || ex.ExRxUrl     || ''
       ];
       sheet.appendRow(row);
       return _ok({ entryId });
@@ -511,7 +513,9 @@ function doPost(e) {
           ex.LastCompletedDate|| ex.lastCompletedDate || today,
           ex.Description      || ex.description      || '',
           ex.RPE              !== undefined ? ex.RPE : ex.rpe !== undefined ? ex.rpe : '',
-          ex.MuscleGroup      || ex.muscleGroup || ''
+          ex.MuscleGroup      || ex.muscleGroup || '',
+          ex.Active           !== undefined ? ex.Active : ex.active !== undefined ? ex.active : true,
+          ex.ExRxUrl          || ex.exRxUrl     || ''
         ]);
         existingIds.add(String(entryId));
         imported++;
