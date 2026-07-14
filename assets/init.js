@@ -176,9 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await readJsonFile(file);
       const rows = Array.isArray(data) ? data : (data.exercises || []);
       if (!rows.length) { toast('⚠️ Ingen øvelser fundet i filen'); return; }
-      const added = mergeExercises(rows);
+      const { added, updatedUrl } = mergeExercises(rows);
       save(); renderHome();
-      toast(`✅ ${added} nye øvelser indlæst (${rows.length - added} sprunget over)`);
+      toast(`✅ ${added} nye øvelser indlæst (${rows.length - added} sprunget over, ${updatedUrl} URL opdateret)`);
     } catch(err) { toast('❌ ' + err.message); }
   });
 
@@ -204,10 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await readJsonFile(file);
       const exRows  = Array.isArray(data) ? data : (data.exercises || []);
       const logRows = Array.isArray(data) ? []   : (data.log || data.entries || []);
-      const addedEx  = mergeExercises(exRows);
+      const { added: addedEx, updatedUrl } = mergeExercises(exRows);
       const addedLog = mergeLog(logRows);
       save(); renderHome();
-      toast(`✅ Importeret: ${addedEx} øvelser, ${addedLog} log-poster`);
+      toast(`✅ Importeret: ${addedEx} øvelser (${updatedUrl} URL opdateret), ${addedLog} log-poster`);
     } catch(err) { toast('❌ ' + err.message); }
   });
 
