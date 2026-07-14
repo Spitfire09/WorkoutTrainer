@@ -1,13 +1,15 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { setLogEntries } from '../assets/state.js';
-import { checkPR, getProgressionHint, isStagnant, getPerformanceScore, getBestPerformance } from '../assets/log.js';
+import { setExercises, setLogEntries } from '../assets/state.js';
+import { checkPR, getProgressionHint, isStagnant, getPerformanceScore, getBestPerformance, mergeExercises } from '../assets/log.js';
 
 describe('log performance logic', () => {
   beforeEach(() => {
+    setExercises([]);
     setLogEntries([]);
   });
 
   afterEach(() => {
+    setExercises([]);
     setLogEntries([]);
     jest.restoreAllMocks();
   });
@@ -77,5 +79,17 @@ describe('log performance logic', () => {
 
   test('checkPR returns true on first ever log for 0 kg exercise', () => {
     expect(checkPR('Pull-up', 0, 5)).toBe(true);
+  });
+
+  test('mergeExercises backfills missing ExRx URL on duplicates', () => {
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: '' }
+    ]);
+
+    const result = mergeExercises([
+      { entryId: 'ex-1', Exercise: 'Bench Press', ExRxUrl: 'https://exrx.net/WeightExercises/PectoralSternal/BBBenchPress' }
+    ]);
+
+    expect(result).toEqual({ added: 0, updatedUrl: 1 });
   });
 });

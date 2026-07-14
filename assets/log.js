@@ -193,17 +193,24 @@ export function normalizeLogEntry(e) {
 }
 
 export function mergeExercises(incoming) {
-  const existingIds = new Set(exercises.map(e => e.entryId));
+  const existingById = new Map(exercises.map(e => [e.entryId, e]));
   let added = 0;
+  let updatedUrl = 0;
   incoming.forEach(raw => {
     const ex = normalizeExercise(raw);
-    if (!existingIds.has(ex.entryId)) {
+    const existing = existingById.get(ex.entryId);
+    if (!existing) {
       exercises.push(ex);
-      existingIds.add(ex.entryId);
+      existingById.set(ex.entryId, ex);
       added++;
+      return;
+    }
+    if (!existing.exRxUrl && ex.exRxUrl) {
+      existing.exRxUrl = ex.exRxUrl;
+      updatedUrl++;
     }
   });
-  return added;
+  return { added, updatedUrl };
 }
 
 export function mergeLog(incoming) {
