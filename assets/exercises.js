@@ -17,6 +17,35 @@ function toUtcMidnightTs(dateStr) {
   return Date.UTC(year, month - 1, day);
 }
 
+function normalizeExRxUrl(url) {
+  const trimmed = String(url || '').trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:\/\//i.test(trimmed)) return '';
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
+  try {
+    const parsed = new URL(candidate);
+    const host = parsed.hostname.toLowerCase();
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    if (!(host === 'exrx.net' || host.endsWith('.exrx.net'))) return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+}
+
+function applyExRxLinkState(url) {
+  const exrxLink = document.getElementById('det-exrx-link');
+  const normalizedUrl = normalizeExRxUrl(url);
+  exrxLink.href = normalizedUrl || '#';
+  exrxLink.style.opacity = normalizedUrl ? '1' : '0.35';
+  exrxLink.style.pointerEvents = normalizedUrl ? '' : 'none';
+  exrxLink.onclick = normalizedUrl ? (e) => {
+    e.preventDefault();
+    const popup = window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
+    if (!popup) window.location.assign(normalizedUrl);
+  } : (e) => e.preventDefault();
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  RENDER: HOME
 // ══════════════════════════════════════════════════════════════════
@@ -24,7 +53,11 @@ function buildDayOptions() {
   const days = sortDayValues(new Set(exercises.map(e => String(e.day))));
   const sel = document.getElementById('sel-day');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Alle dage</option>';
+  sel.replaceChildren();
+  const allDays = document.createElement('option');
+  allDays.value = '';
+  allDays.textContent = 'Alle dage';
+  sel.appendChild(allDays);
   days.forEach(d => {
     const o = document.createElement('option');
     o.value = d; o.textContent = 'Dag ' + d;
@@ -36,7 +69,11 @@ function buildDayOptions() {
 function buildMuscleOptions() {
   const sel = document.getElementById('sel-muscle');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Alle muskler</option>';
+  sel.replaceChildren();
+  const allMuscles = document.createElement('option');
+  allMuscles.value = '';
+  allMuscles.textContent = 'Alle muskler';
+  sel.appendChild(allMuscles);
   const groups = [...new Set(exercises.map(e => e.muscleGroup).filter(Boolean))].sort();
   groups.forEach(g => {
     const o = document.createElement('option');
@@ -153,15 +190,10 @@ export function openDetails(ex) {
   document.getElementById('det-description').value = ex.description      || '';
   document.getElementById('det-active').checked    = ex.active !== false;
   const exrxUrl = ex.exRxUrl || '';
-  document.getElementById('det-exrxurl').value = exrxUrl;
-  const exrxLink = document.getElementById('det-exrx-link');
-  exrxLink.href = '#';
-  exrxLink.style.opacity = exrxUrl ? '1' : '0.35';
-  exrxLink.style.pointerEvents = exrxUrl ? '' : 'none';
-  exrxLink.onclick = exrxUrl ? ((url) => (e) => {
-    e.preventDefault();
-    if (/^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener,noreferrer');
-  })(exrxUrl) : (e) => e.preventDefault();
+  const exrxInput = document.getElementById('det-exrxurl');
+  exrxInput.value = exrxUrl;
+  exrxInput.oninput = (e) => applyExRxLinkState(e.target.value);
+  applyExRxLinkState(exrxUrl);
   if (ex.completed === 'yes' && ex.todayWeight > 0 && ex.todayWeight >= (ex.lastWeight ?? 0)) {
     document.getElementById('det-lastweight').value = ex.todayWeight;
   }
