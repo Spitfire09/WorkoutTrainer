@@ -546,9 +546,10 @@ export async function pushDirtyExRxUrls() {
   if (!dirty.length) return;
   for (const ex of dirty) {
     try {
-      await api({ action: API_ACTIONS.UPDATE_EXERCISE, entryId: ex.entryId,
+      const result = await api({ action: API_ACTIONS.UPDATE_EXERCISE, entryId: ex.entryId,
                   fields: { ExRxUrl: ex.exRxUrl || '' } });
-      delete ex.exRxUrlDirty;
+      // Apps Script returns HTTP 200 even on logical errors, so check status explicitly
+      if (result && result.status === 'ok') delete ex.exRxUrlDirty;
     } catch(e) { /* stay dirty so the next syncAll can retry */ }
   }
   save();
@@ -566,11 +567,31 @@ export async function syncAll() {
     // Push any ExRxUrl-only updates before pulling so the sheet reflects the latest data.
     await pushDirtyExRxUrls();
 
+    // Snapshot dirty exRxUrl state before the pull replaces the exercises array.
+    // If a push failed silently (Apps Script returned an error but no HTTP error),
+    // the dirty flag may still be set. Preserve those values so they survive the
+    // full replace and are retried on the next sync.
+    const dirtyExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    );
+
     const [exRes, logRes] = await Promise.all([
       apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_EXERCISES, cfg.secret)),
       apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_LOG, cfg.secret))
     ]);
-    if (exRes.status === 'ok')  { setExercises(exRes.exercises || []); }
+    if (exRes.status === 'ok') {
+      setExercises(exRes.exercises || []);
+      // Restore local exRxUrl for exercises where the sheet write wasn't confirmed
+      if (dirtyExRxUrls.size) {
+        exercises.forEach(ex => {
+          const localUrl = dirtyExRxUrls.get(ex.entryId);
+          if (localUrl && !ex.exRxUrl) {
+            ex.exRxUrl = localUrl;
+            ex.exRxUrlDirty = true;
+          }
+        });
+      }
+    }
     if (logRes.status === 'ok') { setLogEntries(logRes.entries || []); }
     save();
     renderHome(); renderLog();

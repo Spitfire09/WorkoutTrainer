@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { setExercises, setLogEntries, exercises } from '../assets/state.js';
+import { setExercises, setLogEntries, exercises, setCfg } from '../assets/state.js';
 import { checkPR, getProgressionHint, isStagnant, getPerformanceScore, getBestPerformance, mergeExercises } from '../assets/log.js';
 
 describe('log performance logic', () => {
@@ -104,5 +104,66 @@ describe('log performance logic', () => {
 
     const updated = exercises.find(e => e.entryId === 'ex-2');
     expect(updated.exRxUrlDirty).toBe(true);
+  });
+});
+
+describe('syncAll exRxUrl dirty-state preservation', () => {
+  beforeEach(() => { setExercises([]); });
+  afterEach(() => { setExercises([]); });
+
+  // Reproduces bug: setExercises() (full replace by server data) clears exRxUrlDirty,
+  // so a failed silent push is never retried and the local URL is lost.
+  test('dirty exRxUrl is restored after a full exercises replace when server returns empty', () => {
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo', exRxUrlDirty: true }
+    ]);
+
+    // Snapshot dirty state before the replace (mirrors syncAll logic)
+    const dirtyExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    );
+
+    // Simulate server pull that has no exRxUrl for this exercise
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: '', synced: true }
+    ]);
+
+    // Apply the merge-preservation step from syncAll
+    exercises.forEach(ex => {
+      const localUrl = dirtyExRxUrls.get(ex.entryId);
+      if (localUrl && !ex.exRxUrl) {
+        ex.exRxUrl = localUrl;
+        ex.exRxUrlDirty = true;
+      }
+    });
+
+    expect(exercises[0].exRxUrl).toBe('https://exrx.net/foo');
+    expect(exercises[0].exRxUrlDirty).toBe(true);
+  });
+
+  test('dirty exRxUrl is NOT restored when the server already has a value', () => {
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo', exRxUrlDirty: true }
+    ]);
+
+    const dirtyExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    );
+
+    // Simulate server push confirmed — server now returns the URL
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo', synced: true }
+    ]);
+
+    exercises.forEach(ex => {
+      const localUrl = dirtyExRxUrls.get(ex.entryId);
+      if (localUrl && !ex.exRxUrl) {
+        ex.exRxUrl = localUrl;
+        ex.exRxUrlDirty = true;
+      }
+    });
+
+    expect(exercises[0].exRxUrl).toBe('https://exrx.net/foo');
+    expect(exercises[0].exRxUrlDirty).toBeUndefined();
   });
 });
