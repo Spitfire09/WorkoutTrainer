@@ -536,6 +536,24 @@ export async function quickLogSet() {
 // ══════════════════════════════════════════════════════════════════
 //  SYNC WITH GOOGLE SHEET
 // ══════════════════════════════════════════════════════════════════
+
+// Push ExRxUrl updates for exercises that were backfilled via file-import.
+// These exercises already exist in the sheet, so they cannot use importExercises
+// (which skips existing entryIds). Instead we use updateExercise for each one.
+export async function pushDirtyExRxUrls() {
+  if (!cfg.url) return;
+  const dirty = exercises.filter(e => e.exRxUrlDirty);
+  if (!dirty.length) return;
+  for (const ex of dirty) {
+    try {
+      await api({ action: API_ACTIONS.UPDATE_EXERCISE, entryId: ex.entryId,
+                  fields: { ExRxUrl: ex.exRxUrl || '' } });
+      delete ex.exRxUrlDirty;
+    } catch(e) { /* stay dirty so the next syncAll can retry */ }
+  }
+  save();
+}
+
 export async function syncAll() {
   if (!cfg.url) { toast('⚠️ Angiv Apps Script URL under Indstillinger'); return; }
   spinner(true);
@@ -544,6 +562,9 @@ export async function syncAll() {
     const unsyncedLog = logEntries.filter(e => !e.synced);
     if (unsyncedEx.length)  await api({ action: API_ACTIONS.IMPORT_EXERCISES, rows: unsyncedEx });
     if (unsyncedLog.length) await api({ action: API_ACTIONS.IMPORT_LOG,       rows: unsyncedLog });
+
+    // Push any ExRxUrl-only updates before pulling so the sheet reflects the latest data.
+    await pushDirtyExRxUrls();
 
     const [exRes, logRes] = await Promise.all([
       apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_EXERCISES, cfg.secret)),

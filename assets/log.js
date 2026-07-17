@@ -207,6 +207,7 @@ export function mergeExercises(incoming) {
     }
     if (!existing.exRxUrl && ex.exRxUrl) {
       existing.exRxUrl = ex.exRxUrl;
+      existing.exRxUrlDirty = true;
       updatedUrl++;
     }
   });
