@@ -1,5 +1,11 @@
 [
   {
+    "version": "2.0.2",
+    "description": "Rettet import af øvelser fra JSON: hvis en eksisterende øvelse mangler ExRx-link, bliver feltet nu backfill’et ved import, så ExRx-knappen virker for allerede oprettede øvelser.",
+    "date": "2026-07-17",
+    "timestamp": "2026-07-17T19:30:00Z"
+  },
+  {
     "version": "2.0.1",
     "description": "ExRx-knappen i øvelsesdetaljer virker nu mere robust på mobil/PWA: URL normaliseres (https tilføjes automatisk), knappen opdateres mens du skriver, og åbning falder tilbage til samme fane hvis popup blokeres. Changelog-guard kører nu også på push til main.",
     "date": "2026-07-14",
