@@ -4,7 +4,7 @@ import { API_ACTIONS } from './schema.js';
 import { cfg, exercises, logEntries, load, save, saveCfg, esc, apiGetUrl } from './state.js';
 import { apiFetch } from './api.js';
 import { toast, showScreen, closePRPopup } from './ui.js';
-import { renderHome, saveDetails, saveNewExercise, newDay, deleteExercise, closeQuickPanel, quickDone, quickLogSet, syncAll } from './exercises.js';
+import { renderHome, saveDetails, saveNewExercise, newDay, deleteExercise, closeQuickPanel, quickDone, quickLogSet, syncAll, pushDirtyExRxUrls } from './exercises.js';
 import { renderLog, mergeExercises, mergeLog, readJsonFile } from './log.js';
 import { renderAnalyse, openChart } from './analysis.js';
 import { restoreRestTimer, skipRestTimer, addRestTime, syncRestTimer } from './timer.js';
@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { added, updatedUrl } = mergeExercises(rows);
       save(); renderHome();
       toast(`✅ ${added} nye øvelser indlæst (${rows.length - added} sprunget over, ${updatedUrl} URL opdateret)`);
+      if (updatedUrl > 0) await pushDirtyExRxUrls();
     } catch(err) { toast('❌ ' + err.message); }
   });
 
@@ -208,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const addedLog = mergeLog(logRows);
       save(); renderHome();
       toast(`✅ Importeret: ${addedEx} øvelser (${updatedUrl} URL opdateret), ${addedLog} log-poster`);
+      if (updatedUrl > 0) await pushDirtyExRxUrls();
     } catch(err) { toast('❌ ' + err.message); }
   });
 

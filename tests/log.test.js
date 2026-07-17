@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { setExercises, setLogEntries } from '../assets/state.js';
+import { setExercises, setLogEntries, exercises } from '../assets/state.js';
 import { checkPR, getProgressionHint, isStagnant, getPerformanceScore, getBestPerformance, mergeExercises } from '../assets/log.js';
 
 describe('log performance logic', () => {
@@ -91,5 +91,18 @@ describe('log performance logic', () => {
     ]);
 
     expect(result).toEqual({ added: 0, updatedUrl: 1 });
+  });
+
+  test('mergeExercises marks updated exercises as exRxUrlDirty for sync', () => {
+    setExercises([
+      { entryId: 'ex-2', exercise: 'Squat', exRxUrl: '' }
+    ]);
+
+    mergeExercises([
+      { entryId: 'ex-2', Exercise: 'Squat', ExRxUrl: 'https://exrx.net/WeightExercises/Quadriceps/BBSquat' }
+    ]);
+
+    const updated = exercises.find(e => e.entryId === 'ex-2');
+    expect(updated.exRxUrlDirty).toBe(true);
   });
 });
