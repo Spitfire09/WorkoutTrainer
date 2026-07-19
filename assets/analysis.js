@@ -26,8 +26,8 @@ export function openChart(exerciseName) {
   chartExerciseName = exerciseName;
   document.getElementById('chart-exercise-title').textContent = exerciseName;
   showScreen('screen-chart');
-  // Defer until after layout so canvas.clientWidth is available on mobile
-  requestAnimationFrame(() => renderChart());
+  // Double rAF ensures the browser has flushed layout after display:none→flex
+  requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
 }
 
 export function renderChart() {
@@ -114,7 +114,7 @@ export function renderChart() {
     </div>`).join('');
 
   // ── Canvas chart ───────────────────────────────────────────────
-  const W = canvas.clientWidth || canvas.parentElement?.clientWidth || 320;
+  const W = canvas.getBoundingClientRect().width || canvas.clientWidth || canvas.parentElement?.clientWidth || 320;
   const H = 220;
   canvas.width  = W * (window.devicePixelRatio || 1);
   canvas.height = H * (window.devicePixelRatio || 1);
