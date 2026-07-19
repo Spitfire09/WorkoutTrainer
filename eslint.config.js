@@ -24,6 +24,7 @@ export default [
         setTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
         caches: 'readonly',
         console: 'readonly',
         self: 'readonly',
