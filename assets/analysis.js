@@ -9,12 +9,25 @@ import { showScreen } from './ui.js';
 // ══════════════════════════════════════════════════════════════════
 let chartExerciseName = '';
 
+// Re-render chart on resize/orientation change so canvas fills its container
+window.addEventListener('resize', () => {
+  if (chartExerciseName && document.getElementById('screen-chart')?.classList.contains('active')) {
+    renderChart();
+  }
+});
+window.addEventListener('orientationchange', () => {
+  if (chartExerciseName && document.getElementById('screen-chart')?.classList.contains('active')) {
+    requestAnimationFrame(() => renderChart());
+  }
+});
+
 export function openChart(exerciseName) {
   if (!exerciseName) return;
   chartExerciseName = exerciseName;
   document.getElementById('chart-exercise-title').textContent = exerciseName;
   showScreen('screen-chart');
-  renderChart();
+  // Defer until after layout so canvas.clientWidth is available on mobile
+  requestAnimationFrame(() => renderChart());
 }
 
 export function renderChart() {
@@ -101,7 +114,7 @@ export function renderChart() {
     </div>`).join('');
 
   // ── Canvas chart ───────────────────────────────────────────────
-  const W = canvas.clientWidth || 320;
+  const W = canvas.clientWidth || canvas.parentElement?.clientWidth || 320;
   const H = 220;
   canvas.width  = W * (window.devicePixelRatio || 1);
   canvas.height = H * (window.devicePixelRatio || 1);
