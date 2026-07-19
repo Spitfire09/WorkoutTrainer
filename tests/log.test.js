@@ -107,20 +107,21 @@ describe('log performance logic', () => {
   });
 });
 
-describe('syncAll exRxUrl dirty-state preservation', () => {
+describe('syncAll exRxUrl local-state preservation', () => {
   beforeEach(() => { setExercises([]); });
   afterEach(() => { setExercises([]); });
 
-  // Reproduces bug: setExercises() (full replace by server data) clears exRxUrlDirty,
-  // so a failed silent push is never retried and the local URL is lost.
-  test('dirty exRxUrl is restored after a full exercises replace when server returns empty', () => {
+  // Reproduces bug: pushDirtyExRxUrls() clears the dirty flag when Apps Script returns
+  // ok, even if the sheet silently ignored the write. The snapshot must capture ALL
+  // local URLs (not just dirty ones) so they survive the full replace.
+  test('local exRxUrl is restored after a full exercises replace when server returns empty (dirty)', () => {
     setExercises([
       { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo', exRxUrlDirty: true }
     ]);
 
-    // Snapshot dirty state before the replace (mirrors syncAll logic)
-    const dirtyExRxUrls = new Map(
-      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    // Snapshot ALL exercises with a local URL (mirrors updated syncAll logic)
+    const localExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
     );
 
     // Simulate server pull that has no exRxUrl for this exercise
@@ -130,7 +131,7 @@ describe('syncAll exRxUrl dirty-state preservation', () => {
 
     // Apply the merge-preservation step from syncAll
     exercises.forEach(ex => {
-      const localUrl = dirtyExRxUrls.get(ex.entryId);
+      const localUrl = localExRxUrls.get(ex.entryId);
       if (localUrl && !ex.exRxUrl) {
         ex.exRxUrl = localUrl;
         ex.exRxUrlDirty = true;
@@ -141,13 +142,42 @@ describe('syncAll exRxUrl dirty-state preservation', () => {
     expect(exercises[0].exRxUrlDirty).toBe(true);
   });
 
-  test('dirty exRxUrl is NOT restored when the server already has a value', () => {
+  // Key regression: dirty flag was cleared by a "successful" push that the sheet silently
+  // ignored (outdated Apps Script). Without snapshotting non-dirty URLs the URL is lost.
+  test('local exRxUrl is restored even when dirty flag was already cleared before sync', () => {
+    // Simulate state after pushDirtyExRxUrls cleared the flag but sheet didn't save it
     setExercises([
-      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo', exRxUrlDirty: true }
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo' }
+      // no exRxUrlDirty flag — was cleared by a prior "successful" push
     ]);
 
-    const dirtyExRxUrls = new Map(
-      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    const localExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    );
+
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: '', synced: true }
+    ]);
+
+    exercises.forEach(ex => {
+      const localUrl = localExRxUrls.get(ex.entryId);
+      if (localUrl && !ex.exRxUrl) {
+        ex.exRxUrl = localUrl;
+        ex.exRxUrlDirty = true;
+      }
+    });
+
+    expect(exercises[0].exRxUrl).toBe('https://exrx.net/foo');
+    expect(exercises[0].exRxUrlDirty).toBe(true);
+  });
+
+  test('local exRxUrl is NOT restored when the server already has a value', () => {
+    setExercises([
+      { entryId: 'ex-1', exercise: 'Bench Press', exRxUrl: 'https://exrx.net/foo' }
+    ]);
+
+    const localExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
     );
 
     // Simulate server push confirmed — server now returns the URL
@@ -156,7 +186,7 @@ describe('syncAll exRxUrl dirty-state preservation', () => {
     ]);
 
     exercises.forEach(ex => {
-      const localUrl = dirtyExRxUrls.get(ex.entryId);
+      const localUrl = localExRxUrls.get(ex.entryId);
       if (localUrl && !ex.exRxUrl) {
         ex.exRxUrl = localUrl;
         ex.exRxUrlDirty = true;
