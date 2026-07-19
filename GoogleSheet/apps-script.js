@@ -189,6 +189,8 @@ function doGet(e) {
     if (action === ACTIONS.LIST_EXERCISES) {
       const sheet = ss.getSheetByName(SHEET_EXERCISES);
       if (!sheet) return _ok({ exercises: [] });
+      // Ensure Active and ExRxUrl columns exist (added after initial sheet creation)
+      _ensureSheetColumns(sheet, EXERCISE_HEADERS);
       const rows = _sheetToObjects(sheet, EXERCISE_HEADERS);
       const exercises = rows.map(r => ({
         entryId:           String(r.EntryID || ''),
