@@ -564,16 +564,17 @@ export async function syncAll() {
     if (unsyncedEx.length)  await api({ action: API_ACTIONS.IMPORT_EXERCISES, rows: unsyncedEx });
     if (unsyncedLog.length) await api({ action: API_ACTIONS.IMPORT_LOG,       rows: unsyncedLog });
 
+    // Snapshot ALL local exRxUrls before the push+pull cycle. pushDirtyExRxUrls()
+    // clears the dirty flag when Apps Script returns ok, but an outdated deployment
+    // may return ok without actually writing the column. By snapshotting every
+    // exercise that has a local URL we can restore any that come back empty from
+    // the sheet — regardless of whether the dirty flag was already cleared.
+    const localExRxUrls = new Map(
+      exercises.filter(e => e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
+    );
+
     // Push any ExRxUrl-only updates before pulling so the sheet reflects the latest data.
     await pushDirtyExRxUrls();
-
-    // Snapshot dirty exRxUrl state before the pull replaces the exercises array.
-    // If a push failed silently (Apps Script returned an error but no HTTP error),
-    // the dirty flag may still be set. Preserve those values so they survive the
-    // full replace and are retried on the next sync.
-    const dirtyExRxUrls = new Map(
-      exercises.filter(e => e.exRxUrlDirty && e.exRxUrl).map(e => [e.entryId, e.exRxUrl])
-    );
 
     const [exRes, logRes] = await Promise.all([
       apiFetch(apiGetUrl(cfg.url, API_ACTIONS.LIST_EXERCISES, cfg.secret)),
@@ -581,10 +582,12 @@ export async function syncAll() {
     ]);
     if (exRes.status === 'ok') {
       setExercises(exRes.exercises || []);
-      // Restore local exRxUrl for exercises where the sheet write wasn't confirmed
-      if (dirtyExRxUrls.size) {
+      // Restore local exRxUrl for exercises where the sheet still returns empty.
+      // This covers both still-dirty entries and entries whose dirty flag was
+      // cleared by a push that the sheet silently ignored.
+      if (localExRxUrls.size) {
         exercises.forEach(ex => {
-          const localUrl = dirtyExRxUrls.get(ex.entryId);
+          const localUrl = localExRxUrls.get(ex.entryId);
           if (localUrl && !ex.exRxUrl) {
             ex.exRxUrl = localUrl;
             ex.exRxUrlDirty = true;
