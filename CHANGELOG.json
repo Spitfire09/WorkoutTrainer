@@ -1,5 +1,11 @@
 [
   {
+    "version": "2.0.3",
+    "description": "Fjernet ExRx-domænevalidering på øvelseslink, så andre URL’er nu kan gemmes og åbnes fra detaljevisningen. Linkfelterne accepterer nu også generiske links uden browserens URL-feltvalidering.",
+    "date": "2026-07-21",
+    "timestamp": "2026-07-21T09:56:53Z"
+  },
+  {
     "version": "2.0.2",
     "description": "Rettet import af øvelser fra JSON: hvis en eksisterende øvelse mangler ExRx-link, bliver feltet nu backfill’et ved import, så ExRx-knappen virker for allerede oprettede øvelser.",
     "date": "2026-07-17",
