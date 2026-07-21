@@ -24,9 +24,7 @@ function normalizeExRxUrl(url) {
   const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
   try {
     const parsed = new URL(candidate);
-    const host = parsed.hostname.toLowerCase();
     if (!['http:', 'https:'].includes(parsed.protocol)) return '';
-    if (!(host === 'exrx.net' || host.endsWith('.exrx.net'))) return '';
     return parsed.toString();
   } catch {
     return '';
