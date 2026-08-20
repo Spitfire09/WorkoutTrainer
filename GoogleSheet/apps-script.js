@@ -72,6 +72,19 @@ const EXERCISE_COLS = {
   LAST_COMPLETED_DATE: 'LastCompletedDate'
 };
 
+const EXERCISE_HEADER_ALIASES = {
+  Active: ['Aktiv', 'Aktiv øvelse', 'Aktiv Øvelse', 'ActiveExercise'],
+  ExRxUrl: ['Link URL', 'Link Url', 'LinkURL', 'Link', 'URL', 'ExRxURL', 'Exrxurl']
+};
+
+function _normalizeHeaderName(name) {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function _getHeaderVariants(header) {
+  return [header].concat(EXERCISE_HEADER_ALIASES[header] || []);
+}
+
 // ════════════════════════════════════════════════════════════════
 //  CORS-hjælper
 // ════════════════════════════════════════════════════════════════
@@ -116,12 +129,13 @@ function _ensureSheetColumns(sheet, headers) {
   const existing = lastCol >= 1
     ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim())
     : [];
-  const existingSet = new Set(existing.filter(Boolean));
+  const existingSet = new Set(existing.filter(Boolean).map(_normalizeHeaderName));
   headers.forEach(h => {
-    if (!existingSet.has(h)) {
+    const hasColumn = _getHeaderVariants(h).some(alias => existingSet.has(_normalizeHeaderName(alias)));
+    if (!hasColumn) {
       const newCol = sheet.getLastColumn() + 1;
       sheet.getRange(1, newCol).setValue(h).setFontWeight('bold');
-      existingSet.add(h);
+      existingSet.add(_normalizeHeaderName(h));
     }
   });
 }
@@ -136,9 +150,12 @@ function _sheetToObjects(sheet, headers) {
   const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
     .map(h => String(h).trim());
 
-  // Byg map: kolonnenavn → 0-baseret indeks
+  // Byg map: normaliseret kolonnenavn → 0-baseret indeks
   const colIndex = {};
-  actualHeaders.forEach((h, i) => { if (h) colIndex[h] = i; });
+  actualHeaders.forEach((h, i) => {
+    const key = _normalizeHeaderName(h);
+    if (key && colIndex[key] === undefined) colIndex[key] = i;
+  });
 
   const data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
   return data
@@ -146,7 +163,10 @@ function _sheetToObjects(sheet, headers) {
     .map(row => {
       const obj = {};
       headers.forEach(h => {
-        obj[h] = colIndex[h] !== undefined ? row[colIndex[h]] : '';
+        const idx = _getHeaderVariants(h)
+          .map(variant => colIndex[_normalizeHeaderName(variant)])
+          .find(value => value !== undefined);
+        obj[h] = idx !== undefined ? row[idx] : '';
       });
       return obj;
     });
@@ -290,16 +310,22 @@ function doPost(e) {
       const lastCol = Math.max(sheet.getLastColumn(), 1);
       const actualHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
         .map(h => String(h).trim());
-      const colMap = {}; // kolonnenavn → 1-baseret kolonnenummer
-      actualHeaders.forEach((h, i) => { if (h) colMap[h] = i + 1; });
+      const colMap = {}; // normaliseret kolonnenavn → 1-baseret kolonnenummer
+      actualHeaders.forEach((h, i) => {
+        const key = _normalizeHeaderName(h);
+        if (key && colMap[key] === undefined) colMap[key] = i + 1;
+      });
 
       const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       for (let i = 0; i < ids.length; i++) {
         if (String(ids[i][0]) === entryId) {
           const rowNum = i + 2;
           Object.keys(fields).forEach(h => {
-            if (colMap[h]) {
-              sheet.getRange(rowNum, colMap[h]).setValue(fields[h]);
+            const colNum = _getHeaderVariants(h)
+              .map(variant => colMap[_normalizeHeaderName(variant)])
+              .find(value => value !== undefined);
+            if (colNum) {
+              sheet.getRange(rowNum, colNum).setValue(fields[h]);
             }
           });
           return _ok({ updated: entryId });
