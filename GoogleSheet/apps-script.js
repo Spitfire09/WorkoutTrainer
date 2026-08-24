@@ -77,6 +77,22 @@ const EXERCISE_HEADER_ALIASES = {
   ExRxUrl: ['Link URL', 'Link Url', 'LinkURL', 'Link', 'URL', 'ExRxURL', 'Exrxurl']
 };
 
+function _getScriptVersionMeta() {
+  try {
+    const scriptFile = DriveApp.getFileById(ScriptApp.getScriptId());
+    const updatedAt = scriptFile.getLastUpdated();
+    const tz = Session.getScriptTimeZone() || 'Etc/UTC';
+    return {
+      scriptVersion: Utilities.formatDate(updatedAt, tz, 'yyyyMMdd-HHmm'),
+      scriptUpdatedAt: Utilities.formatDate(updatedAt, 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    };
+  } catch (_) {
+    return {
+      scriptVersion: 'ukendt'
+    };
+  }
+}
+
 function _normalizeHeaderName(name) {
   return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -99,7 +115,7 @@ function _err(msg) {
 }
 
 function _ok(extra) {
-  return _response(Object.assign({ status: 'ok' }, extra || {}));
+  return _response(Object.assign({ status: 'ok' }, _getScriptVersionMeta(), extra || {}));
 }
 
 // ════════════════════════════════════════════════════════════════
