@@ -18,7 +18,48 @@ function loadSettings() {
   document.getElementById('cfg-secret').value       = cfg.secret       || '';
   document.getElementById('cfg-rest-duration').value = cfg.restDuration ?? 90;
   document.getElementById('cfg-timer-sound').checked = cfg.timerSound  ?? true;
+  loadScriptVersion();
   loadChangelog();
+}
+
+function setScriptVersionLabel(version, updatedAt) {
+  const el = document.getElementById('apps-script-version');
+  if (!el) return;
+  if (!version) {
+    el.textContent = 'Ukendt (kræver opdateret apps-script.js)';
+    return;
+  }
+  if (!updatedAt) {
+    el.textContent = version;
+    return;
+  }
+  const parsed = new Date(updatedAt);
+  if (Number.isNaN(parsed.getTime())) {
+    el.textContent = version;
+    return;
+  }
+  const formatted = parsed.toLocaleString('da-DK', { dateStyle: 'short', timeStyle: 'short' });
+  el.textContent = `${version} (${formatted})`;
+}
+
+async function loadScriptVersion() {
+  const el = document.getElementById('apps-script-version');
+  if (!el) return;
+  const url = document.getElementById('cfg-url').value.trim();
+  if (!url) {
+    el.textContent = 'Ikke konfigureret';
+    return;
+  }
+  try {
+    const ping = await apiFetch(url);
+    if (ping?.status === 'ok') {
+      setScriptVersionLabel(ping.scriptVersion, ping.scriptUpdatedAt);
+      return;
+    }
+  } catch (_) {
+    // Ignore and show fallback text below.
+  }
+  el.textContent = 'Kunne ikke hente version';
 }
 
 async function loadChangelog() {
@@ -79,7 +120,9 @@ async function testConnection() {
   try {
     const ping = await apiFetch(url);
     if (!ping || ping.status !== 'ok') throw new Error('Uventet svar fra server');
+    setScriptVersionLabel(ping.scriptVersion, ping.scriptUpdatedAt);
     const check = await apiFetch(apiGetUrl(url, API_ACTIONS.LIST_EXERCISES, secret));
+    setScriptVersionLabel(check.scriptVersion || ping.scriptVersion, check.scriptUpdatedAt || ping.scriptUpdatedAt);
     if (check.status === 'error') {
       el.className = 'err';
       el.textContent = '⚠️ Forbundet, men nøgle er forkert: ' + check.message;
