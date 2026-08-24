@@ -25,7 +25,8 @@
 
 // Secret is read exclusively from Script Properties.
 // Set it via: Apps Script editor → Project Settings → Script Properties → add key "SECRET_TOKEN"
-const SECRET_TOKEN = (function() {
+// Use an app-specific constant name to avoid collisions with other files in the same Apps Script project.
+const WORKOUT_TRAINER_SECRET_TOKEN = (function() {
   const token = PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN');
   if (!token) throw new Error('SECRET_TOKEN er ikke sat i Script Properties. Gå til Projektindstillinger → Scriptegenskaber og tilføj SECRET_TOKEN.');
   return token;
@@ -215,7 +216,7 @@ function doGet(e) {
     }
 
     // Auth-tjek
-    if (!secret || secret !== SECRET_TOKEN) {
+    if (!secret || secret !== WORKOUT_TRAINER_SECRET_TOKEN) {
       return _err('Ugyldig nøgle');
     }
 
@@ -297,8 +298,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
 
     // Auth-tjek
-    // Auth-tjek
-    if (!data.secret || data.secret !== SECRET_TOKEN) {
+    if (!data.secret || data.secret !== WORKOUT_TRAINER_SECRET_TOKEN) {
       return _err('Ugyldig nøgle');
     }
 
