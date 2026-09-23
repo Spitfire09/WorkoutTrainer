@@ -9,6 +9,7 @@ import { renderLog, mergeExercises, mergeLog, readJsonFile } from './log.js';
 import { renderAnalyse, openChart } from './analysis.js';
 import { restoreRestTimer, skipRestTimer, addRestTime, syncRestTimer } from './timer.js';
 import { currentEx } from './state.js';
+import { buildOpenGymCsv } from './opengym-export.js';
 
 // ══════════════════════════════════════════════════════════════════
 //  SETTINGS
@@ -108,6 +109,27 @@ function exportJson() {
   a.click();
 }
 
+function exportOpenGymCsv() {
+  if (!logEntries.length) {
+    toast('⚠️ Ingen log-poster at eksportere');
+    return;
+  }
+  const { csv, summary } = buildOpenGymCsv(logEntries, exercises);
+  if (!summary.exportedRows) {
+    toast('⚠️ Ingen gyldige log-poster til OpenGym-eksport');
+    return;
+  }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'workouttracker-opengym-import.csv';
+  a.click();
+  const unmappedMsg = summary.unmappedNames.length
+    ? ` · ${summary.unmappedNames.length} uden OpenGym-id`
+    : '';
+  toast(`✅ OpenGym-CSV eksporteret (${summary.mappedRows}/${summary.exportedRows} mappet${unmappedMsg})`);
+}
+
 async function testConnection() {
   const url    = document.getElementById('cfg-url').value.trim();
   const secret = document.getElementById('cfg-secret').value;
@@ -204,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-test-conn').addEventListener('click', testConnection);
   document.getElementById('btn-sync').addEventListener('click', syncAll);
   document.getElementById('btn-export-json').addEventListener('click', exportJson);
+  document.getElementById('btn-export-opengym').addEventListener('click', exportOpenGymCsv);
   document.getElementById('btn-check-update').addEventListener('click', checkForUpdate);
 
   // Import from file
